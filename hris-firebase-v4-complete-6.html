@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRIS — Petroplix Energy Services</title>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
+
+<!-- EmailJS SDK (keeping as fallback) -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sb:#0d1b2a;--sb-h:#1a2d42;--sb-a:#1e3a52;--sb-b:#1f3448;
+  --ac:#00b4d8;--ac2:#0096c7;--ac-g:rgba(0,180,216,.15);
+  --hd:#0f2030;--bg:#eef2f7;--wh:#fff;
+  --t1:#1a2533;--t2:#4a5568;--t3:#718096;
+  --br:#e2e8f0;--th:#1e3a52;--ta:#f7fafc;
+  --red:#e53e3e;--grn:#38a169;--org:#d97706;
+  --sw:250px;
+}
+body{font-family:'Exo 2',sans-serif;background:var(--bg);color:var(--t1);margin:0;padding:0;min-height:100vh}
+
+/* ═══ LOGIN SCREEN ═══ */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0d1b2a 0%,#0f2538 50%,#0d1b2a 100%)}
+.login-box{background:var(--wh);padding:45px 40px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.25);max-width:420px;width:90%}
+.login-logo{text-align:center;margin-bottom:30px}
+.login-logo h1{font-family:'Rajdhani',sans-serif;font-size:2em;color:var(--ac);letter-spacing:2px;margin-bottom:5px}
+.login-logo p{font-size:.85em;color:var(--t3);letter-spacing:1px}
+.login-form{display:flex;flex-direction:column;gap:18px}
+.login-field label{display:block;font-size:.82em;font-weight:600;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.login-field input{width:100%;padding:12px 14px;border:1px solid var(--br);border-radius:6px;font-size:.95em;font-family:'Exo 2',sans-serif;transition:border-color .2s,box-shadow .2s}
+.login-field input:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-g)}
+.login-btn{background:var(--ac);color:#fff;padding:13px;border:none;border-radius:6px;font-size:.95em;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Exo 2',sans-serif;letter-spacing:.5px}
+.login-btn:hover{background:var(--ac2);box-shadow:0 4px 14px rgba(0,180,216,.35)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed}
+.login-error{color:var(--red);font-size:.85em;text-align:center;padding:10px;background:#fff5f5;border:1px solid #feb2b2;border-radius:6px;display:none}
+.login-error.show{display:block}
+
+/* ═══ MAIN APP (existing styles from v3) ═══ */
+#main-app{display:none}
+#main-app.show{display:flex}
+
+/* Sidebar */
+#sb{width:var(--sw);min-height:100vh;background:var(--sb);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;border-right:1px solid var(--sb-b);overflow-y:auto}
+.sb-logo{padding:24px 20px 18px;border-bottom:1px solid var(--sb-b);text-align:center}
+.sb-logo .lt{font-family:'Rajdhani',sans-serif;font-size:1.55em;font-weight:700;color:var(--ac);letter-spacing:3px;display:block;line-height:1}
+.sb-logo .ls{font-size:.67em;color:#7fa5c0;letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;display:block}
+.sb-lbl{font-size:.6em;text-transform:uppercase;letter-spacing:2px;color:#35526a;padding:15px 20px 4px;font-weight:700}
+nav ul{list-style:none;padding:3px 0}
+nav ul li a{display:flex;align-items:center;gap:11px;padding:10px 20px;color:#8ab0c8;text-decoration:none;font-size:.87em;font-weight:500;transition:all .18s;border-left:3px solid transparent;cursor:pointer}
+nav ul li a:hover{background:var(--sb-h);color:#c8e6f5;border-left-color:var(--ac)}
+nav ul li a.active{background:var(--sb-a);color:var(--ac);border-left-color:var(--ac);box-shadow:inset 0 0 18px var(--ac-g)}
+nav ul li a .ni{font-size:1.08em;width:21px;text-align:center}
+.sb-foot{margin-top:auto;border-top:1px solid var(--sb-b);padding:10px 0}
+.sb-foot a{display:flex;align-items:center;gap:11px;padding:9px 20px;color:var(--red);font-size:.85em;font-weight:600;cursor:pointer;transition:background .18s;text-decoration:none}
+.sb-foot a:hover{background:rgba(229,62,62,.08)}
+
+/* Main content */
+#main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+#topbar{background:var(--hd);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1a3348;position:sticky;top:0;z-index:50}
+.tb-title{font-family:'Rajdhani',sans-serif;font-size:1.2em;font-weight:700;color:#c8e6f5;letter-spacing:1px}
+.tb-meta{color:#5a8aaa;font-size:.78em}
+.tb-right{display:flex;align-items:center;gap:10px}
+#es{font-size:.75em;padding:3px 9px;border-radius:4px;font-weight:700}
+.es-on{background:#c6f6d5;color:#1a4731}
+.es-off{background:#fed7d7;color:#742a2a}
+.tb-av{width:30px;height:30px;background:var(--ac);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.78em}
+#page{padding:24px 26px;flex:1}
+
+/* Loading spinner */
+.loading-spinner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:rgba(13,27,42,.95);padding:30px;border-radius:12px;display:none;align-items:center;gap:15px;color:#c8e6f5;font-weight:600}
+.loading-spinner.show{display:flex}
+.spinner{width:24px;height:24px;border:3px solid rgba(0,180,216,.3);border-top-color:var(--ac);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Rest of existing styles... (keeping v3 styles for stats, panels, tables, forms, etc.) */
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;margin-bottom:20px}
+.sc{background:var(--wh);border:1px solid var(--br);border-radius:8px;padding:17px 14px;text-align:center;transition:box-shadow .2s,transform .2s}
+.sc:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-2px)}
+.sc .sn{font-family:'Rajdhani',sans-serif;font-size:2.2em;font-weight:700;color:var(--ac2);line-height:1}
+.sc .sl{font-size:.73em;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-weight:600}
+.sc .si{font-size:1.45em;margin-bottom:4px}
+
+.panel{background:var(--wh);border:1px solid var(--br);border-radius:8px;margin-bottom:20px;overflow:hidden}
+.ph{background:var(--th);color:#c8e6f5;padding:12px 18px;font-family:'Rajdhani',sans-serif;font-size:1em;font-weight:600;letter-spacing:.9px;display:flex;align-items:center;justify-content:space-between}
+.pb{padding:20px}
+
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:13px;border-bottom:2px solid var(--br)}
+.sh-l h2{font-family:'Rajdhani',sans-serif;font-size:1.5em;font-weight:700;color:var(--t1)}
+.sh-l p{color:var(--t3);font-size:.82em;margin-top:2px}
+.sh-r{display:flex;gap:9px}
+
+/* Tables */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.87em}
+thead th{background:var(--th);color:#8ab0c8;text-align:left;padding:9px 13px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;font-size:.74em;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--br);transition:background .13s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f0f7fc}
+tbody tr:nth-child(even){background:var(--ta)}
+tbody tr:nth-child(even):hover{background:#e8f4fa}
+td{padding:9px 13px;color:var(--t1);vertical-align:middle}
+td.m{color:var(--t3)}
+.nd{text-align:center;padding:36px;color:var(--t3);font-size:.87em}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 15px;border:none;border-radius:5px;font-size:.82em;font-weight:600;cursor:pointer;transition:all .18s;font-family:'Exo 2',sans-serif;white-space:nowrap}
+.bp{background:var(--ac);color:#fff}.bp:hover{background:var(--ac2);box-shadow:0 4px 12px rgba(0,180,216,.3)}
+.bs{background:#e2e8f0;color:var(--t2)}.bs:hover{background:#cbd5e0}
+.bd{background:var(--red);color:#fff}.bd:hover{background:#c53030}
+.bg{background:var(--grn);color:#fff}.bg:hover{background:#2f855a}
+.bo{background:transparent;border:1px solid var(--ac);color:var(--ac)}.bo:hover{background:var(--ac);color:#fff}
+.bw{background:var(--org);color:#fff}.bw:hover{background:#b45309}
+.bsm{padding:4px 9px;font-size:.76em}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Forms */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.fgrp{margin-bottom:13px}
+.fgrp.full{grid-column:1/-1}
+label{display:block;font-size:.77em;font-weight:700;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+input[type=text],input[type=email],input[type=date],input[type=month],input[type=number],input[type=file],select,textarea{width:100%;padding:8px 11px;border:1px solid var(--br);border-radius:5px;font-size:.89em;font-family:'Exo 2',sans-serif;color:var(--t1);background:#fff;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-g)}
+textarea{resize:vertical;min-height:85px}
+.cc{font-size:.73em;color:var(--t3);text-align:right;margin-top:3px}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.72em;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.bh{background:#c6f6d5;color:#1a4731}.be{background:#bee3f8;color:#1a365d}
+.bpay{background:#feebc8;color:#7c2d12}.bother{background:#e9d8fd;color:#44337a}
+.bon{background:#c6f6d5;color:#1a4731}.boff{background:#fed7d7;color:#742a2a}
+.burg{background:#fed7d7;color:#742a2a}.bnorm{background:#bee3f8;color:#1a365d}
+.binf{background:#c6f6d5;color:#1a4731}.bsent{background:#c6f6d5;color:#1a4731}
+.bdraft{background:#e9d8fd;color:#44337a}
+
+/* File drop */
+.fdz{border:2px dashed #cbd5e0;border-radius:8px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;background:#fafcff}
+.fdz:hover,.fdz.over{border-color:var(--ac);background:var(--ac-g)}
+.fdz .fi{font-size:2em;margin-bottom:7px}
+.fdz p{color:var(--t2);font-size:.85em}
+.fdz .fh{font-size:.75em;color:var(--t3);margin-top:3px}
+.fc{color:var(--ac2);font-weight:600;font-size:.85em;margin-top:7px}
+
+/* Attachment chips */
+.att-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.att-chip{display:flex;align-items:center;gap:7px;background:#eef2f7;border:1px solid var(--br);border-radius:6px;padding:5px 10px;font-size:.8em;font-weight:600;color:var(--t2)}
+.att-chip .att-name{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att-chip .att-rm{background:none;border:none;cursor:pointer;color:var(--red);font-size:1em;line-height:1;padding:0 2px}
+.att-chip .att-icon{font-size:1.1em}
+
+/* Broadcast cards */
+.bc-card{border-radius:8px;padding:16px 18px;margin-bottom:12px;position:relative;transition:box-shadow .2s}
+.bc-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.bc-card.urgent{background:#fff5f5;border:1px solid #feb2b2;border-left:4px solid var(--red)}
+.bc-card.normal{background:#ebf8ff;border:1px solid #90cdf4;border-left:4px solid var(--ac)}
+.bc-card.info{background:#f0fff4;border:1px solid #9ae6b4;border-left:4px solid var(--grn)}
+.bc-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px;gap:10px}
+.bc-title{font-weight:700;font-size:.97em;color:var(--t1)}
+.bc-meta{font-size:.76em;color:var(--t3);margin-top:2px}
+.bc-body{font-size:.87em;color:var(--t2);line-height:1.6;white-space:pre-line}
+.bc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:9px;border-top:1px solid rgba(0,0,0,.06)}
+.rchips{display:flex;flex-wrap:wrap;gap:5px}
+.rchip{background:rgba(0,0,0,.06);padding:2px 9px;border-radius:12px;font-size:.74em;color:var(--t2);font-weight:600}
+
+/* Recipient selector */
+.rsel{border:1px solid var(--br);border-radius:8px;overflow:hidden}
+.rsel-hd{background:#f7fafc;padding:9px 13px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
+.rsel-hd span{font-size:.78em;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px}
+.rlist{max-height:190px;overflow-y:auto}
+.rlist label{display:flex;align-items:center;gap:9px;padding:8px 13px;cursor:pointer;font-size:.86em;text-transform:none;letter-spacing:0;font-weight:500;color:var(--t1);border-bottom:1px solid #f0f4f8;transition:background .13s}
+.rlist label:hover{background:#f0f7fc}
+.rlist label:last-child{border-bottom:none}
+.rlist input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--ac);flex-shrink:0}
+.dept-tag{font-size:.7em;color:var(--t3);margin-left:auto}
+
+/* Progress */
+.prog-wrap{background:#ebf8ff;border:1px solid #90cdf4;border-radius:8px;padding:14px 16px;margin-bottom:14px;display:none}
+.prog-wrap.on{display:block}
+.prog-bar-bg{background:#e2e8f0;border-radius:20px;height:7px;overflow:hidden;margin:7px 0}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:20px;transition:width .35s ease}
+.prog-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.prog-lbl{font-size:.84em;font-weight:700;color:#1a365d}
+.prog-cnt{font-size:.84em;color:var(--t2)}
+
+/* Alert */
+.alert{padding:11px 15px;border-radius:6px;font-size:.85em;margin-bottom:14px;display:flex;align-items:flex-start;gap:9px;font-weight:500;line-height:1.5}
+.ai{background:#ebf8ff;color:#1a365d;border:1px solid #90cdf4}
+.as{background:#f0fff4;color:#1a4731;border:1px solid #9ae6b4}
+.aw{background:#fffbeb;color:#7c2d12;border:1px solid #fcd34d}
+.aD{background:#fff5f5;color:#742a2a;border:1px solid #feb2b2}
+
+/* Email preview */
+.ep{background:#f7fafc;border:1px solid var(--br);border-radius:6px;padding:15px;margin-top:10px}
+.ep-from{font-size:.75em;color:var(--t3);margin-bottom:3px}
+.ep-sub{font-weight:700;color:var(--t1);margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid var(--br)}
+.ep-body{font-size:.86em;color:var(--t2);white-space:pre-line;line-height:1.65}
+
+/* Activity */
+.act-item{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--br);align-items:flex-start}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;background:var(--ac);border-radius:50%;margin-top:5px;flex-shrink:0}
+.act-text{font-size:.85em;color:var(--t1);flex:1}
+.act-time{font-size:.74em;color:var(--t3);white-space:nowrap}
+
+/* Toast */
+#tw{position:fixed;top:18px;right:22px;z-index:9999;display:flex;flex-direction:column;gap:9px}
+.toast{background:#1e3a52;color:#c8e6f5;padding:11px 18px;border-radius:6px;font-size:.86em;font-weight:600;border-left:4px solid var(--ac);box-shadow:0 8px 22px rgba(0,0,0,.28);animation:tin .28s ease;max-width:330px}
+.toast.err{border-left-color:var(--red)}.toast.ok{border-left-color:var(--grn)}
+@keyframes tin{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+
+/* Modal */
+.mo{display:none;position:fixed;inset:0;background:rgba(5,14,26,.72);z-index:200;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.mb{background:var(--wh);border-radius:10px;width:90%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.mh{background:var(--th);color:#c8e6f5;padding:14px 20px;font-family:'Rajdhani',sans-serif;font-size:1.1em;font-weight:700;letter-spacing:.9px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+.mbody{padding:22px}
+.cx{background:none;border:none;color:#8ab0c8;font-size:1.45em;cursor:pointer;line-height:1}
+.cx:hover{color:#fff}
+
+.page-sec{display:none}.page-sec.active{display:block}
+.hidden{display:none!important}
+
+@media(max-width:820px){.fg,.fg3{grid-template-columns:1fr}.sg{grid-template-columns:repeat(2,1fr)}#sb{width:60px}.sb-logo .lt{font-size:0}.sb-logo .ls,.sb-lbl{display:none}nav ul li a span:not(.ni){display:none}#main{margin-left:60px}#page{padding:14px 12px}}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOADING SPINNER ═══ -->
+<div class="loading-spinner" id="loading">
+  <div class="spinner"></div>
+  <span>Loading...</span>
+</div>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>🔐 HRIS</h1>
+      <p>PETROPLIX ENERGY SERVICES</p>
+    </div>
+    <form class="login-form" onsubmit="handleLogin(event)">
+      <div class="login-field">
+        <label>Email Address</label>
+        <input type="email" id="login-email" placeholder="admin@petroplix.com" required autocomplete="email">
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="login-btn" id="login-btn">
+        Login to HRIS
+      </button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="main-app">
+
+<!-- Sidebar -->
+<aside id="sb">
+  <div class="sb-logo">
+    <span class="lt">HRIS</span>
+    <span class="ls">HR Information System</span>
+  </div>
+  <nav>
+    <div class="sb-lbl">Main</div>
+    <ul>
+      <li><a class="active" onclick="pg('dashboard',this)"><span class="ni">📊</span><span>Dashboard</span></a></li>
+      <li><a onclick="pg('employees',this)"><span class="ni">👥</span><span>Employees</span></a></li>
+    </ul>
+    <div class="sb-lbl">Records</div>
+    <ul>
+      <li><a onclick="pg('health',this)"><span class="ni">🏥</span><span>Health Records</span></a></li>
+      <li><a onclick="pg('education',this)"><span class="ni">🎓</span><span>Education & Training</span></a></li>
+      <li><a onclick="pg('documents',this)"><span class="ni">📁</span><span>All Documents</span></a></li>
+    </ul>
+    <div class="sb-lbl">Payroll</div>
+    <ul>
+      <li><a onclick="pg('payslips',this)"><span class="ni">💰</span><span>Payslips</span></a></li>
+      <li><a onclick="pg('payhistory',this)"><span class="ni">📜</span><span>Send History</span></a></li>
+    </ul>
+    <div class="sb-lbl">Communications</div>
+    <ul>
+      <li><a onclick="pg('broadcast',this)"><span class="ni">📢</span><span>Broadcast Messages</span></a></li>
+      <li><a onclick="pg('msghistory',this)"><span class="ni">💬</span><span>Message History</span></a></li>
+    </ul>
+    <div class="sb-lbl">Admin</div>
+    <ul>
+      <li><a onclick="pg('settings',this)"><span class="ni">⚙️</span><span>Email Settings</span></a></li>
+    </ul>
+  </nav>
+  <div class="sb-foot"><a onclick="handleLogout()">🚪 Logout</a></div>
+</aside>
+
+<!-- Main content area -->
+<div id="main">
+  <div id="topbar">
+    <div>
+      <div class="tb-title" id="tt">Dashboard</div>
+      <div class="tb-meta" id="tm">Human Resources Overview</div>
+    </div>
+    <div class="tb-right">
+      <div id="es" class="es-off">● Email Offline</div>
+      <div class="tb-av">CEO</div>
+      <span style="color:#8ab0c8;font-size:.85em">Administrator</span>
+    </div>
+  </div>
+
+  <div id="page">
+    <!-- Dashboard section -->
+    <section id="sec-dashboard" class="page-sec active">
+      <div class="sg">
+        <div class="sc"><div class="si">👥</div><div class="sn" id="s1">0</div><div class="sl">Employees</div></div>
+        <div class="sc"><div class="si">📄</div><div class="sn" id="s2">0</div><div class="sl">Documents</div></div>
+        <div class="sc"><div class="si">🏥</div><div class="sn" id="s3">0</div><div class="sl">Health Records</div></div>
+        <div class="sc"><div class="si">🎓</div><div class="sn" id="s4">0</div><div class="sl">Certifications</div></div>
+        <div class="sc"><div class="si">💰</div><div class="sn" id="s5">0</div><div class="sl">Payslips Sent</div></div>
+        <div class="sc"><div class="si">📢</div><div class="sn" id="s6">0</div><div class="sl">Broadcasts</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div class="panel">
+          <div class="ph">🔔 Recent Activity</div>
+          <div class="pb" id="dash-act"><div class="nd">No activity yet</div></div>
+        </div>
+        <div class="panel">
+          <div class="ph">⚡ Quick Actions</div>
+          <div class="pb" style="display:flex;flex-direction:column;gap:9px">
+            <button class="btn bp" onclick="openModal('m-emp')">➕ Add New Employee</button>
+            <button class="btn bo" onclick="pg('broadcast')">📢 Send Broadcast Message</button>
+            <button class="btn bo" onclick="pg('payslips')">💰 Send Monthly Payslips</button>
+            <button class="btn bo" onclick="openUpload('health')">🏥 Upload Health Record</button>
+            <button class="btn bo" onclick="openUpload('education')">🎓 Upload Certification</button>
+            <button class="btn bs" onclick="pg('settings')">⚙️ Configure Email</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Employees section -->
+    <section id="sec-employees" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>👥 Employees</h2><p>Manage your staff directory</p></div>
+        <div class="sh-r"><button class="btn bp" onclick="openModal('m-emp')">➕ Add Employee</button></div></div>
+      <div class="panel"><div class="ph">Employee Directory</div>
+        <div class="tw"><table><thead><tr><th>Name</th><th>ID</th><th>Department</th><th>Position</th><th>Email</th><th>Start Date</th><th>Docs</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="emp-tb"><tr><td colspan="9" class="nd">No employees yet</td></tr></tbody></table></div></div>
+    </section>
+
+    <!-- Health Records -->
+    <section id="sec-health" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>🏥 Health Records</h2><p>Medical tests, screenings and health documentation</p></div>
+        <div class="sh-r"><button class="btn bp" onclick="openUpload('health')">📤 Upload Health Record</button></div></div>
+      <div class="panel"><div class="ph">Health Records</div>
+        <div class="tw"><table><thead><tr><th>Title</th><th>Employee</th><th>Description</th><th>Uploaded</th><th>File</th><th>Actions</th></tr></thead>
+        <tbody id="hlth-tb"><tr><td colspan="6" class="nd">No health records uploaded</td></tr></tbody></table></div></div>
+    </section>
+
+    <!-- Education -->
+    <section id="sec-education" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>🎓 Education & Training</h2><p>Certifications, training records and qualifications</p></div>
+        <div class="sh-r"><button class="btn bp" onclick="openUpload('education')">📤 Upload Certification</button></div></div>
+      <div class="panel"><div class="ph">Education & Certifications</div>
+        <div class="tw"><table><thead><tr><th>Title</th><th>Employee</th><th>Description</th><th>Uploaded</th><th>File</th><th>Actions</th></tr></thead>
+        <tbody id="edu-tb"><tr><td colspan="6" class="nd">No certifications uploaded</td></tr></tbody></table></div></div>
+    </section>
+
+    <!-- All Documents -->
+    <section id="sec-documents" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>📁 All Documents</h2><p>Complete document archive</p></div>
+        <div class="sh-r"><button class="btn bp" onclick="openUpload('other')">📤 Upload Document</button></div></div>
+      <div class="panel"><div class="ph">Document Archive</div>
+        <div class="tw"><table><thead><tr><th>Title</th><th>Employee</th><th>Type</th><th>Description</th><th>Uploaded</th><th>Size</th><th>Download</th><th>Actions</th></tr></thead>
+        <tbody id="doc-tb"><tr><td colspan="8" class="nd">No documents uploaded</td></tr></tbody></table></div></div>
+    </section>
+
+    <!-- Payslips -->
+    <section id="sec-payslips" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>💰 Monthly Payslips</h2><p>Upload payslips and send automated emails</p></div>
+        <div class="sh-r"><button class="btn bp" onclick="openUpload('payslip')">📤 Upload Payslip</button></div></div>
+      <div class="panel">
+        <div class="ph">📧 Send Monthly Payslips via Email</div>
+        <div class="pb">
+          <div id="pay-prog" class="prog-wrap">
+            <div class="prog-top"><span class="prog-lbl" id="pay-pl">Sending…</span><span class="prog-cnt" id="pay-pc">0/0</span></div>
+            <div class="prog-bar-bg"><div class="prog-bar" id="pay-pb" style="width:0%"></div></div>
+          </div>
+          <div class="alert ai">ℹ️ <div><strong>Real emails require EmailJS configured in ⚙️ Settings.</strong> Each employee receives a personalised payslip notification.</div></div>
+          <div class="fg">
+            <div class="fgrp"><label>Month & Year *</label><input type="month" id="ps-month"></div>
+            <div class="fgrp"><label>Email Subject *</label><input type="text" id="ps-sub" value="Your Monthly Payslip"></div>
+            <div class="fgrp full"><label>Email Body — use {name} and {month}</label>
+              <textarea id="ps-msg" rows="10">Dear {name},
+
+RE: Payslip for {month}
+
+Please find your payslip for {month} attached to this email as a PDF document.
+
+Kindly download and save this payslip for your personal records.
+
+Your salary has been processed and credited to your account.
+
+For any queries regarding your payslip or salary, please contact HR.
+
+Best regards,
+HR Department
+Petroplix Energy Services Ltd.</textarea></div>
+          </div>
+          <button class="btn bp" onclick="sendPayslips()" id="pay-btn">📧 Send to All Employees (<span id="pay-count">0</span>)</button>
+        </div>
+      </div>
+      <div class="panel"><div class="ph">Uploaded Payslip Documents</div>
+        <div class="tw"><table><thead><tr><th>Title</th><th>Employee</th><th>Description</th><th>Uploaded</th><th>File</th><th>Actions</th></tr></thead>
+        <tbody id="pay-tb"><tr><td colspan="6" class="nd">No payslips uploaded</td></tr></tbody></table></div></div>
+    </section>
+
+    <!-- Pay History -->
+    <section id="sec-payhistory" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>📜 Payslip Send History</h2><p>Full log of every monthly payslip email batch</p></div></div>
+      <div class="panel"><div class="ph">Send History</div>
+        <div class="tw"><table><thead><tr><th>Month</th><th>Subject</th><th>Recipients</th><th>Email Status</th><th>Sent On</th><th>Actions</th></tr></thead>
+        <tbody id="payh-tb"><tr><td colspan="6" class="nd">No payslips sent yet</td></tr></tbody></table></div></div>
+    </section>
+
+    <!-- Broadcast Messages -->
+    <section id="sec-broadcast" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>📢 Broadcast Messages</h2><p>Send announcements with text and file attachments</p></div></div>
+      <div class="panel">
+        <div class="ph">✍️ Compose New Broadcast</div>
+        <div class="pb">
+          <div id="bc-prog" class="prog-wrap">
+            <div class="prog-top"><span class="prog-lbl" id="bc-pl">Sending…</span><span class="prog-cnt" id="bc-pc">0/0</span></div>
+            <div class="prog-bar-bg"><div class="prog-bar" id="bc-pb" style="width:0%"></div></div>
+          </div>
+          <div class="fg">
+            <div class="fgrp"><label>Subject *</label><input type="text" id="bc-sub" placeholder="e.g. Q3 Company Update"></div>
+            <div class="fgrp"><label>Priority</label>
+              <select id="bc-pri">
+                <option value="normal">📘 Normal Announcement</option>
+                <option value="urgent">🔴 URGENT — Immediate Attention</option>
+                <option value="info">✅ General Information</option>
+              </select>
+            </div>
+            <div class="fgrp full"><label>Message Body * — use {name}</label>
+              <textarea id="bc-body" rows="7" oninput="document.getElementById('bc-cc').textContent=this.value.length+' characters'"></textarea>
+              <div class="cc" id="bc-cc">0 characters</div>
+            </div>
+          </div>
+          <div class="fgrp">
+            <label>📎 Attach Files (up to 5 files, 5 MB each)</label>
+            <div class="fdz" id="bc-fdz" onclick="document.getElementById('bc-files').click()">
+              <div class="fi">📎</div>
+              <p>Click to browse or drag & drop files</p>
+            </div>
+            <input type="file" id="bc-files" class="hidden" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx" onchange="addBCAttachments(event)">
+            <div class="att-list" id="bc-att-list"></div>
+          </div>
+          <div class="fgrp">
+            <label>Send To</label>
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+              <button type="button" class="btn bs bsm" onclick="selAll(true)">☑ Select All</button>
+              <button type="button" class="btn bs bsm" onclick="selAll(false)">☐ Deselect All</button>
+            </div>
+            <div class="rsel">
+              <div class="rsel-hd">
+                <span>Choose recipients</span>
+                <span id="sel-cnt" style="color:var(--ac);font-weight:700">0 selected</span>
+              </div>
+              <div class="rlist" id="r-list"><div style="padding:13px;color:var(--t3);font-size:.85em">Add employees first</div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn bp" onclick="sendBroadcast()" id="bc-btn">📢 Send Broadcast</button>
+            <button class="btn bs" onclick="clearBCForm()">🗑 Clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph">📬 Recent Broadcasts</div>
+        <div class="pb" id="recent-bc"><div class="nd">No broadcasts sent yet</div></div>
+      </div>
+    </section>
+
+    <!-- Message History -->
+    <section id="sec-msghistory" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>💬 Message History</h2><p>All broadcast messages sent to staff</p></div></div>
+      <div class="panel"><div class="ph">Broadcast History</div>
+        <div class="tw"><table><thead><tr><th>Subject</th><th>Priority</th><th>Attachments</th><th>Recipients</th><th>Email Status</th><th>Sent On</th><th>Actions</th></tr></thead>
+        <tbody id="msg-tb"><tr><td colspan="7" class="nd">No messages sent yet</td></tr></tbody></table></div></div>
+    </section>
+
+    <!-- Settings -->
+    <section id="sec-settings" class="page-sec">
+      <div class="sh"><div class="sh-l"><h2>⚙️ Email Settings</h2><p>Configure EmailJS for real email sending</p></div></div>
+      <div class="panel">
+        <div class="ph">📧 EmailJS Configuration</div>
+        <div class="pb">
+          <div class="alert ai">ℹ️ <div><strong>EmailJS is FREE (200 emails/month).</strong> For emails with file attachments, payslips use Brevo (300/day free) via Firebase Functions.</div></div>
+          <div class="fg3">
+            <div class="fgrp"><label>Public Key *</label><input type="text" id="cfg-pk" placeholder="e.g. user_xxxx"></div>
+            <div class="fgrp"><label>Service ID *</label><input type="text" id="cfg-svc" placeholder="e.g. service_xxx"></div>
+            <div class="fgrp"><label>Template ID *</label><input type="text" id="cfg-tpl" placeholder="e.g. template_xxx"></div>
+          </div>
+          <div class="fg">
+            <div class="fgrp"><label>Sender Name</label><input type="text" id="cfg-name" placeholder="e.g. HR Department"></div>
+            <div class="fgrp"><label>Sender Email (for Brevo)</label><input type="email" id="cfg-email" placeholder="e.g. hr@petroplix.com"></div>
+          </div>
+          <button class="btn bp" onclick="saveEmailCfg()">💾 Save & Connect</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph">🏢 Company Settings</div>
+        <div class="pb">
+          <div class="fg">
+            <div class="fgrp"><label>Company Name</label><input type="text" id="cfg-co" placeholder="Your Company Name"></div>
+            <div class="fgrp"><label>HR Contact Email</label><input type="email" id="cfg-hr" placeholder="hr@company.com"></div>
+          </div>
+          <button class="btn bp" onclick="saveCo()">💾 Save Company Settings</button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /page -->
+</div><!-- /main -->
+
+</div><!-- /main-app -->
+
+<div id="tw"></div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Add Employee Modal -->
+<div class="mo" id="m-emp">
+  <div class="mb">
+    <div class="mh"><span>➕ Add New Employee</span><button class="cx" onclick="closeModal('m-emp')">×</button></div>
+    <div class="mbody">
+      <div class="fg">
+        <div class="fgrp"><label>First Name *</label><input type="text" id="f-fn"></div>
+        <div class="fgrp"><label>Last Name *</label><input type="text" id="f-ln"></div>
+        <div class="fgrp"><label>Email *</label><input type="email" id="f-em"></div>
+        <div class="fgrp"><label>Employee ID *</label><input type="text" id="f-eid"></div>
+        <div class="fgrp"><label>Department</label>
+          <select id="f-dept"><option value="">— Select —</option><option>Human Resources</option><option>Finance</option><option>Information Technology</option><option>Operations</option><option>Sales</option><option>Marketing</option><option>Legal</option><option>Administration</option></select>
+        </div>
+        <div class="fgrp"><label>Position</label><input type="text" id="f-pos"></div>
+        <div class="fgrp"><label>Start Date</label><input type="date" id="f-sd"></div>
+        <div class="fgrp"><label>Status</label><select id="f-st"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+      </div>
+      <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:8px">
+        <button class="btn bs" onclick="closeModal('m-emp')">Cancel</button>
+        <button class="btn bp" onclick="addEmployee()">Add Employee</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Document Modal -->
+<div class="mo" id="m-upload">
+  <div class="mb">
+    <div class="mh"><span id="up-title">📤 Upload Document</span><button class="cx" onclick="closeModal('m-upload')">×</button></div>
+    <div class="mbody">
+      <div class="fg">
+        <div class="fgrp"><label>Employee *</label><select id="u-emp"></select></div>
+        <div class="fgrp"><label>Document Type *</label>
+          <select id="u-type"><option value="health">Health Tests & Records</option><option value="education">Education & Training</option><option value="payslip">Payslip</option><option value="other">Other Document</option></select>
+        </div>
+        <div class="fgrp full"><label>Document Title *</label><input type="text" id="u-title" placeholder="e.g. Annual Medical Check 2025"></div>
+        <div class="fgrp full"><label>Description</label><textarea id="u-desc" rows="3"></textarea></div>
+        <div class="fgrp full">
+          <label>Select File *</label>
+          <div class="fdz" id="u-fdz" onclick="document.getElementById('u-file').click()">
+            <div class="fi">📁</div><p>Click to browse or drag & drop</p>
+            <p class="fh">PDF, DOC, DOCX, JPG, PNG — Max 10 MB</p>
+          </div>
+          <input type="file" id="u-file" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="docFileChosen(event)">
+          <div id="u-fc" class="fc"></div>
+          <div id="upload-progress" style="display:none;margin-top:10px">
+            <div style="font-size:.85em;color:var(--t2);margin-bottom:5px">Uploading: <span id="upload-percent">0%</span></div>
+            <div class="prog-bar-bg"><div class="prog-bar" id="upload-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:8px">
+        <button class="btn bs" onclick="closeModal('m-upload')">Cancel</button>
+        <button class="btn bp" onclick="uploadDoc()" id="upload-btn">Upload</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Employee Modal -->
+<div class="mo" id="m-emp-view">
+  <div class="mb">
+    <div class="mh"><span>👤 Employee Profile</span><button class="cx" onclick="closeModal('m-emp-view')">×</button></div>
+    <div class="mbody" id="emp-view-body"></div>
+  </div>
+</div>
+
+<!-- Generic View Modal (for payslip/broadcast details) -->
+<div class="mo" id="m-view">
+  <div class="mb" style="max-width:900px">
+    <div class="mh"><span id="view-modal-title">Details</span><button class="cx" onclick="closeModal('m-view')">×</button></div>
+    <div class="mbody" id="view-modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// FIREBASE CONFIGURATION & INITIALIZATION
+// ═══════════════════════════════════════════════════════════
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDBcxRTA9I8AISOjBSHd1eJbbNuA9A_2kU",
+  authDomain: "petroplix-hris-45963.firebaseapp.com",
+  databaseURL: "https://petroplix-hris-45963-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "petroplix-hris-45963",
+  storageBucket: "petroplix-hris-45963.firebasestorage.app",
+  messagingSenderId: "566604107744",
+  appId: "1:566604107744:web:3ef872281e8f58b561a585"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+// Get Firebase service references
+const auth = firebase.auth();
+const db = firebase.database();
+const storage = firebase.storage();
+const functions = firebase.functions();
+
+console.log('✅ Firebase initialized successfully');
+
+// ═══════════════════════════════════════════════════════════
+// AUTHENTICATION
+// ═══════════════════════════════════════════════════════════
+
+// Handle login form submission
+async function handleLogin(e) {
+  e.preventDefault();
+  
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errorDiv = document.getElementById('login-error');
+  
+  btn.disabled = true;
+  btn.textContent = 'Logging in...';
+  errorDiv.classList.remove('show');
+  
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    console.log('✅ Login successful');
+    // Firebase will trigger onAuthStateChanged automatically
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    errorDiv.textContent = 'Invalid email or password. Please try again.';
+    errorDiv.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Login to HRIS';
+  }
+}
+
+// Handle logout
+function handleLogout() {
+  if (confirm('Are you sure you want to logout?')) {
+    auth.signOut();
+    toast('Logged out successfully');
+  }
+}
+
+// Listen for auth state changes
+auth.onAuthStateChanged(user => {
+  const loginScreen = document.getElementById('login-screen');
+  const mainApp = document.getElementById('main-app');
+  const loading = document.getElementById('loading');
+  
+  if (user) {
+    console.log('✅ User authenticated:', user.email);
+    loading.classList.add('show');
+    loginScreen.style.display = 'none';
+    mainApp.classList.add('show');
+    
+    // Load all data from Firebase
+    initializeApp();
+  } else {
+    console.log('❌ User not authenticated');
+    mainApp.classList.remove('show');
+    loginScreen.style.display = 'flex';
+    loading.classList.remove('show');
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// DATA MANAGEMENT (Firebase Realtime Database)
+// ═══════════════════════════════════════════════════════════
+
+// In-memory data stores (synced with Firebase)
+let employees = [];
+let documents = [];
+let payHistory = [];
+let broadcasts = [];
+let activities = [];
+let emailConfig = {};
+let companyConfig = {};
+
+// Initialize app - load all data from Firebase
+function initializeApp() {
+  console.log('🔄 Loading data from Firebase...');
+  
+  // Listen to employees
+  db.ref('employees').on('value', snapshot => {
+    employees = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        employees.push({ firebaseKey: child.key, ...child.val() });
+      });
+    }
+    console.log(`✅ Loaded ${employees.length} employees`);
+    renderEmployees();
+    updateStats();
+  });
+  
+  // Listen to documents
+  db.ref('documents').on('value', snapshot => {
+    documents = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        documents.push({ firebaseKey: child.key, ...child.val() });
+      });
+    }
+    console.log(`✅ Loaded ${documents.length} documents`);
+    renderAllDocTables();
+    updateStats();
+  });
+  
+  // Listen to broadcasts
+  db.ref('broadcasts').on('value', snapshot => {
+    broadcasts = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        broadcasts.push({ firebaseKey: child.key, ...child.val() });
+      });
+    }
+    console.log(`✅ Loaded ${broadcasts.length} broadcasts`);
+    renderMsgHistory();
+    renderBroadcastCards();
+    updateStats();
+  });
+  
+  // Listen to payHistory
+  db.ref('payHistory').on('value', snapshot => {
+    payHistory = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        payHistory.push({ firebaseKey: child.key, ...child.val() });
+      });
+    }
+    console.log(`✅ Loaded ${payHistory.length} pay history records`);
+    renderPayHistory();
+    updateStats();
+  });
+  
+  // Listen to activities
+  db.ref('activities').limitToLast(25).on('value', snapshot => {
+    activities = [];
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        activities.push({ firebaseKey: child.key, ...child.val() });
+      });
+    }
+    activities.reverse(); // Most recent first
+    console.log(`✅ Loaded ${activities.length} activities`);
+    renderDashboard();
+  });
+  
+  // Load email config (single value)
+  db.ref('config/email').on('value', snapshot => {
+    if (snapshot.exists()) {
+      emailConfig = snapshot.val();
+      initEmailJS();
+    }
+    console.log('✅ Loaded email config');
+  });
+  
+  // Load company config (single value)
+  db.ref('config/company').on('value', snapshot => {
+    if (snapshot.exists()) {
+      companyConfig = snapshot.val();
+    }
+    console.log('✅ Loaded company config');
+  });
+  
+  // Hide loading spinner after initial load
+  setTimeout(() => {
+    document.getElementById('loading').classList.remove('show');
+    toast('Data loaded successfully', 'ok');
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EMAILJS (unchanged from v3)
+// ═══════════════════════════════════════════════════════════
+
+let ejsOk = false;
+
+function initEmailJS() {
+  if (emailConfig.pk) {
+    try {
+      emailjs.init(emailConfig.pk);
+      ejsOk = true;
+      setEmailStatus(true);
+      console.log('✅ EmailJS initialized');
+    } catch(e) {
+      ejsOk = false;
+      setEmailStatus(false);
+      console.error('❌ EmailJS init failed:', e);
+    }
+  }
+}
+
+function setEmailStatus(ok) {
+  const el = document.getElementById('es');
+  el.textContent = ok ? '● Email Connected' : '● Email Offline';
+  el.className = ok ? 'es-on' : 'es-off';
+}
+
+async function ejsSend(toEmail, toName, subject, message, attachmentInfo) {
+  if (!ejsOk || !emailConfig.svc || !emailConfig.tpl) return false;
+  const fullMsg = attachmentInfo
+    ? message + '\\n\\n──────────────────\\n📎 ATTACHMENTS:\\n' + attachmentInfo + '\\n──────────────────\\n(Files stored in HR system. Contact HR for copies.)'
+    : message;
+  try {
+    await emailjs.send(emailConfig.svc, emailConfig.tpl, {
+      to_email: toEmail,
+      to_name: toName,
+      subject: subject,
+      message: fullMsg,
+      from_name: emailConfig.senderName || companyConfig.name || 'HR Department',
+      attachment_info: attachmentInfo || 'No attachments',
+    });
+    return true;
+  } catch(e) {
+    console.error('EmailJS send error:', e);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// BREVO EMAIL WITH ATTACHMENTS (via Firebase Functions)
+// ═══════════════════════════════════════════════════════════
+
+async function brevoSend(toEmail, toName, subject, message, attachments = []) {
+  try {
+    const sendEmailFunction = functions.httpsCallable('sendEmailWithAttachment');
+    
+    const result = await sendEmailFunction({
+      to: toEmail,
+      toName: toName,
+      subject: subject,
+      message: message,
+      attachments: attachments,
+      from: emailConfig.senderEmail || 'hr@petroplix.com',
+      fromName: emailConfig.senderName || 'Petroplix HR Department'
+    });
+    
+    console.log('✅ Email sent via Brevo:', result.data);
+    return true;
+  } catch (error) {
+    console.error('❌ Brevo send error:', error);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EMPLOYEE MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+
+async function addEmployee() {
+  const fn = V('f-fn'), ln = V('f-ln'), em = V('f-em'), eid = V('f-eid');
+  if (!fn || !ln || !em || !eid) {
+    toast('Fill all required fields', 'err');
+    return;
+  }
+  
+  const newEmployee = {
+    firstName: fn,
+    lastName: ln,
+    email: em,
+    employeeId: eid,
+    department: V('f-dept'),
+    position: V('f-pos'),
+    startDate: V('f-sd'),
+    status: V('f-st') || 'Active',
+    addedAt: new Date().toISOString()
+  };
+  
+  try {
+    await db.ref('employees').push(newEmployee);
+    await logActivity(`Added employee: ${fn} ${ln}`);
+    
+    ['f-fn','f-ln','f-em','f-eid','f-dept','f-pos','f-sd'].forEach(id => {
+      const e = document.getElementById(id);
+      if (e) e.value = '';
+    });
+    document.getElementById('f-st').value = 'Active';
+    
+    closeModal('m-emp');
+    toast(`${fn} ${ln} added successfully`, 'ok');
+  } catch (error) {
+    console.error('Error adding employee:', error);
+    toast('Failed to add employee', 'err');
+  }
+}
+
+async function deleteEmployee(firebaseKey) {
+  if (!confirm('Delete this employee and all their documents?')) return;
+  
+  const emp = employees.find(e => e.firebaseKey === firebaseKey);
+  
+  try {
+    // Delete employee
+    await db.ref('employees/' + firebaseKey).remove();
+    
+    // Delete all documents for this employee
+    const empDocs = documents.filter(d => d.empId === firebaseKey);
+    for (const doc of empDocs) {
+      await db.ref('documents/' + doc.firebaseKey).remove();
+      // Also delete from Storage if downloadURL exists
+      if (doc.downloadURL) {
+        try {
+          const fileRef = storage.refFromURL(doc.downloadURL);
+          await fileRef.delete();
+        } catch (e) {
+          console.warn('Could not delete file from storage:', e);
+        }
+      }
+    }
+    
+    await logActivity(`Deleted employee: ${emp.firstName} ${emp.lastName}`);
+    toast('Employee deleted');
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    toast('Failed to delete employee', 'err');
+  }
+}
+
+function viewEmployee(firebaseKey) {
+  const emp = employees.find(e => e.firebaseKey === firebaseKey);
+  if (!emp) return;
+  
+  const empDocs = documents.filter(d => d.empId === firebaseKey);
+  
+  document.getElementById('emp-view-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+      <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Full Name</div><strong style="font-size:1.1em">${emp.firstName} ${emp.lastName}</strong></div>
+      <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Employee ID</div><strong>${emp.employeeId}</strong></div>
+      <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Email</div><div>${emp.email}</div></div>
+      <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Department</div><div>${emp.department || '—'}</div></div>
+      <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Position</div><div>${emp.position || '—'}</div></div>
+      <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Status</div><span class="badge ${emp.status === 'Active' ? 'bon' : 'boff'}">${emp.status}</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+      <div class="sc"><div class="sn" style="font-size:1.7em">${empDocs.filter(d => d.type === 'health').length}</div><div class="sl">Health</div></div>
+      <div class="sc"><div class="sn" style="font-size:1.7em">${empDocs.filter(d => d.type === 'education').length}</div><div class="sl">Certifications</div></div>
+      <div class="sc"><div class="sn" style="font-size:1.7em">${empDocs.filter(d => d.type === 'payslip').length}</div><div class="sl">Payslips</div></div>
+    </div>
+    ${empDocs.length ? `<div class="panel"><div class="ph">Documents</div><div class="tw"><table><thead><tr><th>Title</th><th>Type</th><th>Uploaded</th><th>Download</th></tr></thead><tbody>${empDocs.map(d => `<tr><td><strong>${d.title}</strong></td><td><span class="badge ${bdg(d.type)}">${tName(d.type)}</span></td><td class="m">${fmtDt(d.uploadedAt)}</td><td><a href="${d.downloadURL}" target="_blank" class="btn bs bsm">📥 Download</a></td></tr>`).join('')}</tbody></table></div></div>` : '<div class="alert ai">ℹ️ <div>No documents uploaded for this employee yet.</div></div>'}
+  `;
+  
+  openModal('m-emp-view');
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+async function logActivity(msg) {
+  await db.ref('activities').push({
+    msg: msg,
+    ts: Date.now()
+  });
+}
+
+function V(id) {
+  return document.getElementById(id)?.value?.trim() || '';
+}
+
+function toast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (type === 'err' ? ' err' : type === 'ok' ? ' ok' : '');
+  t.textContent = (type === 'err' ? '⚠️ ' : type === 'ok' ? '✅ ' : '') + msg;
+  document.getElementById('tw').appendChild(t);
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transition = 'opacity .4s';
+    setTimeout(() => t.remove(), 400);
+  }, 4000);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Navigation
+function pg(key, el) {
+  // Page management logic here
+  console.log('Navigate to:', key);
+}
+
+// Render functions
+function renderEmployees() {
+  const tb = document.getElementById('emp-tb');
+  if (!employees.length) {
+    tb.innerHTML = '<tr><td colspan="9" class="nd">No employees yet</td></tr>';
+    return;
+  }
+  // Render employee table rows
+  tb.innerHTML = employees.map(e => `<tr>
+    <td><strong>${e.firstName} ${e.lastName}</strong></td>
+    <td class="m">${e.employeeId}</td>
+    <td>${e.department || '—'}</td>
+    <td>${e.position || '—'}</td>
+    <td class="m">${e.email}</td>
+    <td class="m">${e.startDate ? new Date(e.startDate).toLocaleDateString() : '—'}</td>
+    <td><strong>${documents.filter(d => d.empId === e.firebaseKey).length}</strong></td>
+    <td><span class="badge ${e.status === 'Active' ? 'bon' : 'boff'}">${e.status}</span></td>
+    <td><button class="btn bs bsm" onclick="viewEmployee('${e.firebaseKey}')">👁 View</button> <button class="btn bd bsm" onclick="deleteEmployee('${e.firebaseKey}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAG & DROP HANDLERS
+// ═══════════════════════════════════════════════════════════
+
+// Document upload drag & drop
+document.addEventListener('DOMContentLoaded', () => {
+  const uFDZ = document.getElementById('u-fdz');
+  if (uFDZ) {
+    uFDZ.addEventListener('dragover', e => {
+      e.preventDefault();
+      uFDZ.classList.add('over');
+    });
+    uFDZ.addEventListener('dragleave', () => uFDZ.classList.remove('over'));
+    uFDZ.addEventListener('drop', e => {
+      e.preventDefault();
+      uFDZ.classList.remove('over');
+      const f = e.dataTransfer.files[0];
+      if (f) docFileChosen({ target: { files: [f] } });
+    });
+  }
+  
+  // Broadcast attachments drag & drop
+  const bcFDZ = document.getElementById('bc-fdz');
+  if (bcFDZ) {
+    bcFDZ.addEventListener('dragover', e => {
+      e.preventDefault();
+      bcFDZ.classList.add('over');
+    });
+    bcFDZ.addEventListener('dragleave', () => bcFDZ.classList.remove('over'));
+    bcFDZ.addEventListener('drop', e => {
+      e.preventDefault();
+      bcFDZ.classList.remove('over');
+      addBCAttachments({ target: { files: e.dataTransfer.files } });
+    });
+  }
+  
+  // Modal click-outside-to-close
+  document.querySelectorAll('.mo').forEach(m => {
+    m.addEventListener('click', e => {
+      if (e.target === m) m.classList.remove('open');
+    });
+  });
+});
+
+function renderAllDocTables() {
+  // Placeholder
+}
+
+function renderMsgHistory() {
+  // Placeholder
+}
+
+function renderBroadcastCards() {
+  // Placeholder
+}
+
+function renderPayHistory() {
+  // Placeholder
+}
+
+function renderDashboard() {
+  const el = document.getElementById('dash-act');
+  if (!activities.length) {
+    el.innerHTML = '<div class="nd">No activity yet</div>';
+    return;
+  }
+  el.innerHTML = activities.slice(0, 8).map(a => `
+    <div class="act-item">
+      <div class="act-dot"></div>
+      <div class="act-text">${a.msg}</div>
+      <div class="act-time">${relTime(a.ts)}</div>
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  document.getElementById('s1').textContent = employees.length;
+  document.getElementById('s2').textContent = documents.length;
+  document.getElementById('s3').textContent = documents.filter(d => d.type === 'health').length;
+  document.getElementById('s4').textContent = documents.filter(d => d.type === 'education').length;
+  document.getElementById('s5').textContent = payHistory.reduce((s, r) => s + (r.recipients?.length || 0), 0);
+  document.getElementById('s6').textContent = broadcasts.reduce((s, b) => s + (b.recipients?.length || 0), 0);
+}
+
+function relTime(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'Just now';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  return Math.floor(s / 86400) + 'd ago';
+}
+
+// ═══════════════════════════════════════════════════════════
+// DOCUMENT UPLOAD WITH FIREBASE STORAGE
+// ═══════════════════════════════════════════════════════════
+
+let docFile = null;
+let bcAttachments = [];
+
+function docFileChosen(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (f.size > 10 * 1024 * 1024) {
+    toast('File must be < 10 MB', 'err');
+    return;
+  }
+  docFile = f;
+  document.getElementById('u-fc').textContent = '✅ ' + f.name + ' (' + fmtSz(f.size) + ')';
+}
+
+function openUpload(type) {
+  const titles = {
+    health: '🏥 Upload Health Record',
+    education: '🎓 Upload Certification',
+    payslip: '💰 Upload Payslip',
+    other: '📄 Upload Document'
+  };
+  document.getElementById('up-title').textContent = titles[type] || '📤 Upload Document';
+  document.getElementById('u-type').value = type;
+  refreshEmpSelect();
+  openModal('m-upload');
+}
+
+function refreshEmpSelect() {
+  const sel = document.getElementById('u-emp');
+  sel.innerHTML = employees.length
+    ? employees.map(e => `<option value="${e.firebaseKey}">${e.firstName} ${e.lastName} (${e.employeeId})</option>`).join('')
+    : '<option value="">— No employees yet —</option>';
+}
+
+async function uploadDoc() {
+  const empKey = document.getElementById('u-emp').value;
+  const type = V('u-type');
+  const title = V('u-title');
+  const desc = V('u-desc');
+  
+  if (!empKey || !type || !title || !docFile) {
+    toast('Fill all required fields and select a file', 'err');
+    return;
+  }
+  
+  const emp = employees.find(e => e.firebaseKey === empKey);
+  const btn = document.getElementById('upload-btn');
+  const progressDiv = document.getElementById('upload-progress');
+  const progressBar = document.getElementById('upload-bar');
+  const progressText = document.getElementById('upload-percent');
+  
+  btn.disabled = true;
+  btn.textContent = 'Uploading...';
+  progressDiv.style.display = 'block';
+  
+  try {
+    // Upload file to Firebase Storage
+    const timestamp = Date.now();
+    const filename = `${timestamp}_${docFile.name}`;
+    const storageRef = storage.ref(`documents/${type}/${filename}`);
+    const uploadTask = storageRef.put(docFile);
+    
+    // Monitor upload progress
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        progressBar.style.width = progress + '%';
+        progressText.textContent = Math.round(progress) + '%';
+      },
+      (error) => {
+        console.error('Upload error:', error);
+        toast('Upload failed: ' + error.message, 'err');
+        btn.disabled = false;
+        btn.textContent = 'Upload';
+        progressDiv.style.display = 'none';
+      },
+      async () => {
+        // Upload complete - get download URL
+        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+        
+        // Save metadata to database
+        await db.ref('documents').push({
+          empId: empKey,
+          empName: `${emp.firstName} ${emp.lastName}`,
+          type: type,
+          title: title,
+          description: desc,
+          fileName: docFile.name,
+          fileSize: docFile.size,
+          downloadURL: downloadURL,
+          uploadedAt: new Date().toISOString()
+        });
+        
+        await logActivity(`Uploaded ${type} document: ${title} for ${emp.firstName} ${emp.lastName}`);
+        
+        // Reset form
+        docFile = null;
+        ['u-file', 'u-title', 'u-desc'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        document.getElementById('u-fc').textContent = '';
+        progressDiv.style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Upload';
+        
+        closeModal('m-upload');
+        toast(`"${title}" uploaded successfully`, 'ok');
+      }
+    );
+  } catch (error) {
+    console.error('Upload error:', error);
+    toast('Upload failed', 'err');
+    btn.disabled = false;
+    btn.textContent = 'Upload';
+    progressDiv.style.display = 'none';
+  }
+}
+
+async function deleteDoc(firebaseKey) {
+  if (!confirm('Delete this document?')) return;
+  
+  const doc = documents.find(d => d.firebaseKey === firebaseKey);
+  
+  try {
+    // Delete from Storage if URL exists
+    if (doc.downloadURL) {
+      try {
+        const fileRef = storage.refFromURL(doc.downloadURL);
+        await fileRef.delete();
+      } catch (e) {
+        console.warn('Could not delete file from storage:', e);
+      }
+    }
+    
+    // Delete from database
+    await db.ref('documents/' + firebaseKey).remove();
+    await logActivity(`Deleted document: ${doc.title}`);
+    toast('Document deleted');
+  } catch (error) {
+    console.error('Error deleting document:', error);
+    toast('Failed to delete document', 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// BROADCAST MESSAGES WITH ATTACHMENTS
+// ═══════════════════════════════════════════════════════════
+
+function addBCAttachments(e) {
+  const files = [...e.target.files];
+  files.forEach(f => {
+    if (f.size > 5 * 1024 * 1024) {
+      toast(`${f.name} exceeds 5 MB limit`, 'err');
+      return;
+    }
+    if (bcAttachments.length >= 5) {
+      toast('Maximum 5 attachments', 'err');
+      return;
+    }
+    if (bcAttachments.find(a => a.name === f.name)) return;
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      bcAttachments.push({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        base64: reader.result.split(',')[1]
+      });
+      renderBCAttList();
+    };
+    reader.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+
+function removeBCAtt(name) {
+  bcAttachments = bcAttachments.filter(a => a.name !== name);
+  renderBCAttList();
+}
+
+function renderBCAttList() {
+  const c = document.getElementById('bc-att-list');
+  if (!bcAttachments.length) {
+    c.innerHTML = '';
+    return;
+  }
+  c.innerHTML = bcAttachments.map(a => `
+    <div class="att-chip">
+      <span class="att-icon">${attIcon(a.type)}</span>
+      <span class="att-name" title="${a.name}">${a.name}</span>
+      <span style="color:var(--t3);font-size:.75em">${fmtSz(a.size)}</span>
+      <button class="att-rm" onclick="removeBCAtt('${a.name.replace(/'/g, "\\'")}')">✕</button>
+    </div>`).join('');
+}
+
+function attIcon(mime) {
+  if (mime.includes('pdf')) return '📕';
+  if (mime.includes('word') || mime.includes('doc')) return '📘';
+  if (mime.includes('sheet') || mime.includes('excel')) return '📗';
+  if (mime.includes('image')) return '🖼️';
+  return '📄';
+}
+
+function renderRList() {
+  const c = document.getElementById('r-list');
+  if (!employees.length) {
+    c.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:.85em">Add employees first</div>';
+    return;
+  }
+  c.innerHTML = employees.map(e => `
+    <label>
+      <input type="checkbox" class="rc" value="${e.firebaseKey}" onchange="updSelCnt()">
+      <span><strong>${e.firstName} ${e.lastName}</strong> — ${e.email}</span>
+      <span class="dept-tag">${e.department || ''}</span>
+    </label>`).join('');
+  updSelCnt();
+}
+
+function updSelCnt() {
+  document.getElementById('sel-cnt').textContent = document.querySelectorAll('.rc:checked').length + ' selected';
+}
+
+function selAll(v) {
+  document.querySelectorAll('.rc').forEach(cb => cb.checked = v);
+  updSelCnt();
+}
+
+async function sendBroadcast() {
+  const subj = V('bc-sub');
+  const pri = V('bc-pri');
+  const body = V('bc-body');
+  const selected = [...document.querySelectorAll('.rc:checked')].map(cb => cb.value);
+  
+  if (!subj) {
+    toast('Enter a subject', 'err');
+    return;
+  }
+  if (!body) {
+    toast('Enter a message body', 'err');
+    return;
+  }
+  if (!selected.length) {
+    toast('Select at least one recipient', 'err');
+    return;
+  }
+  
+  const attInfo = bcAttachments.length
+    ? bcAttachments.map((a, i) => `${i + 1}. ${a.name} (${fmtSz(a.size)})`).join('\\n')
+    : '';
+  
+  showProg('bc-prog', true);
+  const btn = document.getElementById('bc-btn');
+  btn.disabled = true;
+  
+  let sent = 0, fail = 0;
+  const total = selected.length;
+  const results = [];
+  
+  for (let i = 0; i < selected.length; i++) {
+    const emp = employees.find(e => e.firebaseKey === selected[i]);
+    if (!emp) continue;
+    
+    const personalMsg = body.replace(/{name}/g, `${emp.firstName} ${emp.lastName}`);
+    const fullSubj = pri === 'urgent' ? `🔴 URGENT: ${subj}` : subj;
+    
+    updProg('bc-prog', `Sending to ${emp.firstName} ${emp.lastName}…`, i, total);
+    
+    const ok = ejsOk ? await ejsSend(emp.email, `${emp.firstName} ${emp.lastName}`, fullSubj, personalMsg, attInfo) : false;
+    if (ok) sent++;
+    else fail++;
+    results.push({ empId: emp.firebaseKey, name: `${emp.firstName} ${emp.lastName}`, email: emp.email, sent: ok });
+    await wait(380);
+  }
+  
+  updProg('bc-prog', 'Done!', total, total);
+  setTimeout(() => showProg('bc-prog', false), 2200);
+  btn.disabled = false;
+  
+  // Save to Firebase
+  await db.ref('broadcasts').push({
+    subject: subj,
+    priority: pri,
+    body: body,
+    sentAt: new Date().toISOString(),
+    recipients: results,
+    attachments: bcAttachments.map(a => ({ name: a.name, size: a.size, type: a.type })),
+    sent: sent,
+    fail: fail,
+    ejsUsed: ejsOk
+  });
+  
+  await logActivity(`Broadcast "${subj}" → ${selected.length} recipients (${pri})`);
+  
+  clearBCForm();
+  toast(ejsOk ? `✅ Broadcast: ${sent} delivered, ${fail} failed` : `📋 Logged for ${selected.length} staff`, 'ok');
+}
+
+function clearBCForm() {
+  ['bc-sub', 'bc-body'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.value = '';
+  });
+  document.getElementById('bc-pri').value = 'normal';
+  document.getElementById('bc-cc').textContent = '0 characters';
+  bcAttachments = [];
+  renderBCAttList();
+  selAll(false);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAYSLIPS
+// ═══════════════════════════════════════════════════════════
+
+async function sendPayslips() {
+  const month = V('ps-month');
+  const subj = V('ps-sub');
+  const msgT = V('ps-msg');
+  
+  if (!month) {
+    toast('Select a month', 'err');
+    return;
+  }
+  if (!employees.length) {
+    toast('No employees found', 'err');
+    return;
+  }
+  
+  showProg('pay-prog', true);
+  const btn = document.getElementById('pay-btn');
+  btn.disabled = true;
+  
+  let sent = 0, fail = 0;
+  const total = employees.length;
+  const results = [];
+  
+  for (let i = 0; i < employees.length; i++) {
+    const e = employees[i];
+    const msg = msgT.replace(/{name}/g, `${e.firstName} ${e.lastName}`).replace(/{month}/g, fmtMo(month));
+    updProg('pay-prog', `Sending to ${e.firstName} ${e.lastName}…`, i, total);
+    
+    // Find payslip document for this employee for this month
+    const empPayslips = documents.filter(d => 
+      d.empId === e.firebaseKey && 
+      d.type === 'payslip' && 
+      d.uploadedAt && 
+      d.uploadedAt.startsWith(month)
+    );
+    
+    // Prepare attachments array
+    const attachments = empPayslips.map(doc => ({
+      storagePath: doc.downloadURL ? doc.downloadURL.split('/o/')[1].split('?')[0].replace(/%2F/g, '/') : null,
+      filename: doc.fileName || `${e.firstName}_${e.lastName}_Payslip.pdf`
+    })).filter(att => att.storagePath);
+    
+    // Try Brevo first (with attachments), fallback to EmailJS
+    let ok = false;
+    if (attachments.length > 0) {
+      ok = await brevoSend(e.email, `${e.firstName} ${e.lastName}`, `${subj} — ${fmtMo(month)}`, msg, attachments);
+    }
+    
+    // Fallback to EmailJS if Brevo fails or no attachments
+    if (!ok && ejsOk) {
+      ok = await ejsSend(e.email, `${e.firstName} ${e.lastName}`, `${subj} — ${fmtMo(month)}`, msg, '');
+    }
+    
+    if (ok) sent++;
+    else fail++;
+    results.push({ empId: e.firebaseKey, name: `${e.firstName} ${e.lastName}`, email: e.email, sent: ok });
+    await wait(350);
+  }
+  
+  updProg('pay-prog', 'Done!', total, total);
+  setTimeout(() => showProg('pay-prog', false), 2200);
+  btn.disabled = false;
+  
+  // Save to Firebase
+  await db.ref('payHistory').push({
+    month: month,
+    subject: subj,
+    message: msgT,
+    sentAt: new Date().toISOString(),
+    recipients: results,
+    sent: sent,
+    fail: fail,
+    ejsUsed: ejsOk
+  });
+  
+  await logActivity(`Payslips for ${fmtMo(month)}: ${sent} sent, ${fail} failed`);
+  
+  toast(`✅ Payslips: ${sent} delivered, ${fail} failed`, sent > 0 ? 'ok' : 'err');
+}
+
+// ═══════════════════════════════════════════════════════════
+// EMAIL SETTINGS
+// ═══════════════════════════════════════════════════════════
+
+async function saveEmailCfg() {
+  const pk = V('cfg-pk');
+  const svc = V('cfg-svc');
+  const tpl = V('cfg-tpl');
+  
+  if (!pk || !svc || !tpl) {
+    toast('Fill all three EmailJS fields', 'err');
+    return;
+  }
+  
+  const config = {
+    pk: pk,
+    svc: svc,
+    tpl: tpl,
+    senderName: V('cfg-name'),
+    senderEmail: V('cfg-email')
+  };
+  
+  await db.ref('config/email').set(config);
+  toast('Email settings saved successfully!', 'ok');
+}
+
+async function saveCo() {
+  const config = {
+    name: V('cfg-co'),
+    hrEmail: V('cfg-hr')
+  };
+  await db.ref('config/company').set(config);
+  toast('Company settings saved', 'ok');
+}
+
+function loadSettingsForm() {
+  if (emailConfig.pk) document.getElementById('cfg-pk').value = emailConfig.pk;
+  if (emailConfig.svc) document.getElementById('cfg-svc').value = emailConfig.svc;
+  if (emailConfig.tpl) document.getElementById('cfg-tpl').value = emailConfig.tpl;
+  if (emailConfig.senderName) document.getElementById('cfg-name').value = emailConfig.senderName;
+  if (emailConfig.senderEmail) document.getElementById('cfg-email').value = emailConfig.senderEmail;
+  if (companyConfig.name) document.getElementById('cfg-co').value = companyConfig.name;
+  if (companyConfig.hrEmail) document.getElementById('cfg-hr').value = companyConfig.hrEmail;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+function renderAllDocTables() {
+  renderDocTbl('hlth-tb', 'health', 6);
+  renderDocTbl('edu-tb', 'education', 6);
+  renderDocTbl('pay-tb', 'payslip', 6);
+  renderAllDocs();
+}
+
+function renderDocTbl(tbodyId, type, cols) {
+  const tb = document.getElementById(tbodyId);
+  const docs = documents.filter(d => d.type === type);
+  if (!docs.length) {
+    tb.innerHTML = `<tr><td colspan="${cols}" class="nd">No records found</td></tr>`;
+    return;
+  }
+  tb.innerHTML = docs.map(d => `<tr>
+    <td><strong>${d.title}</strong></td>
+    <td>${d.empName}</td>
+    <td class="m">${d.description || '—'}</td>
+    <td class="m">${fmtDt(d.uploadedAt)}</td>
+    <td class="m"><a href="${d.downloadURL}" target="_blank" style="color:var(--ac);text-decoration:none">📥 ${d.fileName}</a></td>
+    <td><button class="btn bd bsm" onclick="deleteDoc('${d.firebaseKey}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+function renderAllDocs() {
+  const tb = document.getElementById('doc-tb');
+  if (!documents.length) {
+    tb.innerHTML = '<tr><td colspan="8" class="nd">No documents uploaded</td></tr>';
+    return;
+  }
+  tb.innerHTML = documents.map(d => `<tr>
+    <td><strong>${d.title}</strong></td>
+    <td>${d.empName}</td>
+    <td><span class="badge ${bdg(d.type)}">${tName(d.type)}</span></td>
+    <td class="m">${d.description || '—'}</td>
+    <td class="m">${fmtDt(d.uploadedAt)}</td>
+    <td class="m">${fmtSz(d.fileSize)}</td>
+    <td><a href="${d.downloadURL}" target="_blank" class="btn bs bsm">📥 Download</a></td>
+    <td><button class="btn bd bsm" onclick="deleteDoc('${d.firebaseKey}')">🗑</button></td>
+  </tr>`).join('');
+}
+
+function renderPayHistory() {
+  const tb = document.getElementById('payh-tb');
+  if (!payHistory.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="nd">No payslips sent yet</td></tr>';
+    return;
+  }
+  tb.innerHTML = payHistory.map(r => `<tr>
+    <td><strong>${fmtMo(r.month)}</strong></td>
+    <td>${r.subject}</td>
+    <td><span class="badge bon">${r.recipients?.length || 0} Employees</span></td>
+    <td>${r.ejsUsed ? `<span class="badge bsent">${r.sent} sent</span>${r.fail ? ` <span class="badge burg">${r.fail} failed</span>` : ''}` : '<span class="badge bdraft">Logged only</span>'}</td>
+    <td class="m">${fmtDt(r.sentAt)}</td>
+    <td><button class="btn bs bsm" onclick="viewPayHistory('${r.firebaseKey}')">👁 View</button></td>
+  </tr>`).join('');
+}
+
+function viewPayHistory(firebaseKey) {
+  const record = payHistory.find(r => r.firebaseKey === firebaseKey);
+  if (!record) return;
+  
+  const html = `
+    <div style="margin-bottom:18px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Month</div><strong style="font-size:1.1em">${fmtMo(record.month)}</strong></div>
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Sent On</div><strong>${fmtDt(record.sentAt)}</strong></div>
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Subject</div><div>${record.subject}</div></div>
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Status</div>${record.ejsUsed ? `<span class="badge bsent">${record.sent} sent</span> ${record.fail ? `<span class="badge burg">${record.fail} failed</span>` : ''}` : '<span class="badge bdraft">Logged only</span>'}</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph">Email Message</div>
+      <div class="pb"><div class="ep-body">${record.message}</div></div>
+    </div>
+    <div class="panel">
+      <div class="ph">Recipients (${record.recipients?.length || 0})</div>
+      <div class="tw"><table><thead><tr><th>Name</th><th>Email</th><th>Status</th></tr></thead>
+      <tbody>${(record.recipients || []).map(r => `<tr>
+        <td><strong>${r.name}</strong></td>
+        <td class="m">${r.email}</td>
+        <td>${r.sent ? '<span class="badge bsent">✓ Sent</span>' : '<span class="badge burg">✗ Failed</span>'}</td>
+      </tr>`).join('')}</tbody></table></div>
+    </div>
+  `;
+  
+  document.getElementById('view-modal-title').textContent = '📜 Payslip Send Details';
+  document.getElementById('view-modal-body').innerHTML = html;
+  openModal('m-view');
+}
+
+function renderMsgHistory() {
+  const tb = document.getElementById('msg-tb');
+  if (!broadcasts.length) {
+    tb.innerHTML = '<tr><td colspan="7" class="nd">No messages sent yet</td></tr>';
+    return;
+  }
+  tb.innerHTML = broadcasts.map(b => `<tr>
+    <td><strong>${b.priority === 'urgent' ? '🔴 ' : b.priority === 'info' ? '✅ ' : ''}${b.subject}</strong></td>
+    <td><span class="badge ${b.priority === 'urgent' ? 'burg' : b.priority === 'info' ? 'binf' : 'bnorm'}">${b.priority.toUpperCase()}</span></td>
+    <td>${b.attachments?.length ? `<span class="badge bother">📎 ${b.attachments.length}</span>` : '<span class="m">—</span>'}</td>
+    <td><span class="badge bon">${b.recipients?.length || 0} staff</span></td>
+    <td>${b.ejsUsed ? `<span class="badge bsent">${b.sent} sent</span>${b.fail ? ` <span class="badge burg">${b.fail} failed</span>` : ''}` : '<span class="badge bdraft">Logged only</span>'}</td>
+    <td class="m">${fmtDt(b.sentAt)}</td>
+    <td><button class="btn bs bsm" onclick="viewBroadcast('${b.firebaseKey}')">👁 View</button></td>
+  </tr>`).join('');
+}
+
+function viewBroadcast(firebaseKey) {
+  const record = broadcasts.find(b => b.firebaseKey === firebaseKey);
+  if (!record) return;
+  
+  const html = `
+    <div style="margin-bottom:18px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Subject</div><strong style="font-size:1.1em">${record.subject}</strong></div>
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Sent On</div><strong>${fmtDt(record.sentAt)}</strong></div>
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Priority</div><span class="badge ${record.priority === 'urgent' ? 'burg' : record.priority === 'info' ? 'binf' : 'bnorm'}">${record.priority.toUpperCase()}</span></div>
+        <div><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px">Status</div>${record.ejsUsed ? `<span class="badge bsent">${record.sent} sent</span> ${record.fail ? `<span class="badge burg">${record.fail} failed</span>` : ''}` : '<span class="badge bdraft">Logged only</span>'}</div>
+      </div>
+      ${record.attachments?.length ? `<div style="margin-bottom:14px"><div style="font-size:.72em;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Attachments (${record.attachments.length})</div><div class="att-list">${record.attachments.map(a => `<div class="att-chip"><span class="att-icon">${attIcon(a.type)}</span><span class="att-name">${a.name}</span><span style="color:var(--t3);font-size:.75em">${fmtSz(a.size)}</span></div>`).join('')}</div></div>` : ''}
+    </div>
+    <div class="panel">
+      <div class="ph">Message Body</div>
+      <div class="pb"><div class="ep-body">${record.body}</div></div>
+    </div>
+    <div class="panel">
+      <div class="ph">Recipients (${record.recipients?.length || 0})</div>
+      <div class="tw"><table><thead><tr><th>Name</th><th>Email</th><th>Status</th></tr></thead>
+      <tbody>${(record.recipients || []).map(r => `<tr>
+        <td><strong>${r.name}</strong></td>
+        <td class="m">${r.email}</td>
+        <td>${r.sent ? '<span class="badge bsent">✓ Sent</span>' : '<span class="badge burg">✗ Failed</span>'}</td>
+      </tr>`).join('')}</tbody></table></div>
+    </div>
+  `;
+  
+  document.getElementById('view-modal-title').textContent = '📢 Broadcast Message Details';
+  document.getElementById('view-modal-body').innerHTML = html;
+  openModal('m-view');
+}
+
+function renderBroadcastCards() {
+  const el = document.getElementById('recent-bc');
+  if (!broadcasts.length) {
+    el.innerHTML = '<div class="nd">No broadcasts sent yet</div>';
+    return;
+  }
+  el.innerHTML = broadcasts.slice(0, 5).map(b => `
+    <div class="bc-card ${b.priority}">
+      <div class="bc-hd">
+        <div>
+          <div class="bc-title">${b.priority === 'urgent' ? '🔴 URGENT: ' : ''}${b.subject}</div>
+          <div class="bc-meta">Sent ${relTime(new Date(b.sentAt).getTime())} · ${b.recipients.length} recipients · ${b.ejsUsed ? `${b.sent} emails delivered` : 'Logged only'}</div>
+        </div>
+        <div style="display:flex;gap:7px;flex-shrink:0">
+          <span class="badge ${b.priority === 'urgent' ? 'burg' : b.priority === 'info' ? 'binf' : 'bnorm'}">${b.priority.toUpperCase()}</span>
+        </div>
+      </div>
+      <div class="bc-body">${b.body.length > 180 ? b.body.slice(0, 180) + '…' : b.body}</div>
+      <div class="bc-foot">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="rchips">${b.recipients.slice(0, 5).map(r => `<span class="rchip">${r.name.split(' ')[0]}</span>`).join('')}${b.recipients.length > 5 ? `<span class="rchip">+${b.recipients.length - 5}</span>` : ''}</div>
+          ${b.attachments?.length ? `<span class="badge bother">📎 ${b.attachments.length} file${b.attachments.length > 1 ? 's' : ''}</span>` : ''}
+        </div>
+        <span style="font-size:.74em;color:var(--t3)">${fmtDt(b.sentAt)}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+
+const PM = {
+  dashboard: { s: 'sec-dashboard', t: 'Dashboard', m: 'Human Resources Overview' },
+  employees: { s: 'sec-employees', t: 'Employees', m: 'Manage your staff directory' },
+  health: { s: 'sec-health', t: 'Health Records', m: 'Medical tests & documentation' },
+  education: { s: 'sec-education', t: 'Education & Training', m: 'Certifications and qualifications' },
+  documents: { s: 'sec-documents', t: 'All Documents', m: 'Complete document archive' },
+  payslips: { s: 'sec-payslips', t: 'Payslips', m: 'Monthly payslip management' },
+  payhistory: { s: 'sec-payhistory', t: 'Payslip Send History', m: 'Full email send log' },
+  broadcast: { s: 'sec-broadcast', t: 'Broadcast Messages', m: 'CEO & Admin communications' },
+  msghistory: { s: 'sec-msghistory', t: 'Message History', m: 'All broadcast messages sent' },
+  settings: { s: 'sec-settings', t: 'Email Settings', m: 'EmailJS configuration' },
+};
+
+function pg(key, el) {
+  const c = PM[key];
+  if (!c) return;
+  
+  document.querySelectorAll('.page-sec').forEach(s => s.classList.remove('active'));
+  document.getElementById(c.s).classList.add('active');
+  document.getElementById('tt').textContent = c.t;
+  document.getElementById('tm').textContent = c.m;
+  
+  document.querySelectorAll('nav ul li a').forEach(a => a.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else document.querySelectorAll('nav ul li a').forEach(a => {
+    if (a.getAttribute('onclick')?.includes(`'${key}'`)) a.classList.add('active');
+  });
+  
+  if (key === 'settings') loadSettingsForm();
+  if (key === 'payslips') document.getElementById('pay-count').textContent = employees.length;
+  if (key === 'broadcast') renderRList();
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+function fmtDt(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtMo(s) {
+  if (!s) return '—';
+  return new Date(s + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function fmtSz(b) {
+  if (!b) return '—';
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(2) + ' MB';
+}
+
+function tName(t) {
+  return { health: 'Health', education: 'Education', payslip: 'Payslip', other: 'Other' }[t] || 'Doc';
+}
+
+function bdg(t) {
+  return { health: 'bh', education: 'be', payslip: 'bpay', other: 'bother' }[t] || 'bother';
+}
+
+function wait(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function showProg(id, on) {
+  document.getElementById(id).classList.toggle('on', on);
+}
+
+function updProg(id, lbl, i, tot) {
+  const pre = id.split('-')[0] + '-' + id.split('-')[1];
+  const labelEl = document.getElementById(pre + '-pl');
+  const countEl = document.getElementById(pre + '-pc');
+  const barEl = document.getElementById(pre + '-pb');
+  
+  if (labelEl) labelEl.textContent = lbl;
+  if (countEl) countEl.textContent = `${i}/${tot}`;
+  if (barEl) barEl.style.width = tot ? Math.round(i / tot * 100) + '%' : '0%';
+}
+
+console.log('✅ HRIS Firebase v4 loaded successfully');
+
+</script>
+
+</body>
+</html>
