@@ -401,17 +401,21 @@ textarea{resize:vertical;min-height:85px}
             <div class="fgrp"><label>Month & Year *</label><input type="month" id="ps-month"></div>
             <div class="fgrp"><label>Email Subject *</label><input type="text" id="ps-sub" value="Your Monthly Payslip"></div>
             <div class="fgrp full"><label>Email Body — use {name} and {month}</label>
-              <textarea id="ps-msg" rows="6">Dear {name},
+<textarea id="ps-msg" rows="10">Dear {name},
 
-Your payslip for {month} is now available in the HRIS.
+RE: Payslip for {month}
 
-Please login to download your payslip:
-https://oladejotemi-maker.github.io/petroplix-hr/
+Please find your payslip for {month} attached to this email as a PDF document.
 
-Your salary has been processed. Contact HR with any questions.
+Kindly download and save this payslip for your personal records.
+
+Your salary has been processed and credited to your account.
+
+For any queries regarding your payslip or salary, please contact HR.
 
 Best regards,
-HR Department</textarea></div>
+HR Department
+Petroplix Energy Services Ltd.</textarea></div>
           </div>
           <button class="btn bp" onclick="sendPayslips()" id="pay-btn">📧 Send to All Employees (<span id="pay-count">0</span>)</button>
         </div>
