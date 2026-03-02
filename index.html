@@ -284,6 +284,7 @@ textarea{resize:vertical;min-height:85px}
     </ul>
     <div class="sb-lbl">Payroll</div>
     <ul>
+      <li><a onclick="pg('salaries',this)"><span class="ni">💰</span><span>Manage Salaries</span></a></li>
       <li><a onclick="pg('payslip-template',this)"><span class="ni">📋</span><span>Payslip Template</span></a></li>
       <li><a onclick="pg('payslips',this)"><span class="ni">💰</span><span>Send Payslips</span></a></li>
       <li><a onclick="pg('payhistory',this)"><span class="ni">📜</span><span>Send History</span></a></li>
@@ -502,9 +503,10 @@ Monaplix Energy Services Ltd.</textarea></div>
             <div class="prog-top"><span class="prog-lbl" id="pay-prog-pl">Preparing...</span><span class="prog-cnt" id="pay-prog-pc">0/0</span></div>
             <div class="prog-bar-bg"><div class="prog-bar" id="pay-prog-pb" style="width:0%"></div></div>
           </div>
-          <button class="btn bp" id="pay-btn" onclick="sendPayslips()">📧 Generate & Send Payslips to All Employees</button>
-        </div>
-      </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn bp" id="gen-send-btn" onclick="generateAndSendPayslips()">🎨 Generate PDFs & Send to All</button>
+            <button class="btn bo" id="pay-btn" onclick="sendPayslips()">📧 Send Pre-Uploaded PDFs Only</button>
+          </div>
     </section>
 
     <!-- Payslip History -->
@@ -549,6 +551,39 @@ Monaplix Energy Services Ltd.</textarea></div>
         <tbody id="msg-tb"><tr><td colspan="5" class="nd">No messages sent yet</td></tr></tbody></table></div></div>
     </section>
 
+<!-- ═══ MANAGE EMPLOYEE SALARIES ═══ -->
+    <section id="sec-salaries" class="page-sec">
+      <div class="sh">
+        <div class="sh-l">
+          <h2>💰 Manage Employee Salaries</h2>
+          <p>Configure monthly salary for each employee</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">Employee Salary Configuration</div>
+        <div class="pb">
+          <div class="alert ai">ℹ️ <div><strong>Configure individual salaries here.</strong> Each employee can have unique salary components. Use "Generate & Send Payslips" to auto-create PDFs and email them.</div></div>
+          
+          <div class="tw">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>Last Salary Update</th>
+                  <th>Monthly Net Pay</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="salary-tb">
+                <tr><td colspan="5" class="nd">No employees yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
     <!-- Settings -->
     <section id="sec-settings" class="page-sec">
       <div class="sh"><div class="sh-l"><h2>⚙️ Email Settings</h2><p>Configure email services</p></div></div>
@@ -622,6 +657,87 @@ Monaplix Energy Services Ltd.</textarea></div>
       <div style="display:flex;gap:9px;margin-top:18px">
         <button class="btn bp" id="u-btn" onclick="uploadDoc()">📤 Upload</button>
         <button class="btn bs" onclick="closeModal('m-upload')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Edit Salary Modal -->
+<div class="mo" id="m-salary">
+  <div class="mb">
+    <div class="mh"><span id="salary-title">💰 Edit Employee Salary</span><button class="cx" onclick="closeModal('m-salary')">×</button></div>
+    <div class="mbody">
+      <div style="margin-bottom:20px;padding:12px;background:#f0f7fc;border-radius:6px">
+        <div style="font-weight:700;margin-bottom:4px" id="salary-emp-name">Employee Name</div>
+        <div style="font-size:.85em;color:var(--t3)" id="salary-emp-info">Department • Position</div>
+      </div>
+
+      <div class="fgrp">
+        <label>Month *</label>
+        <select id="sal-month">
+          <option value="">Select Month...</option>
+          <option value="2026-03">March 2026</option>
+          <option value="2026-02">February 2026</option>
+          <option value="2026-01">January 2026</option>
+          <option value="2025-12">December 2025</option>
+          <option value="2025-11">November 2025</option>
+          <option value="2025-10">October 2025</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px">
+        <div class="fgrp">
+          <label>Basic Salary (₦)</label>
+          <input type="number" id="sal-basic" placeholder="e.g. 500000" min="0" step="1000">
+        </div>
+        <div class="fgrp">
+          <label>Housing Allowance (₦)</label>
+          <input type="number" id="sal-housing" placeholder="e.g. 100000" min="0" step="1000">
+        </div>
+        <div class="fgrp">
+          <label>Transport Allowance (₦)</label>
+          <input type="number" id="sal-transport" placeholder="e.g. 50000" min="0" step="1000">
+        </div>
+        <div class="fgrp">
+          <label>Utility Allowance (₦)</label>
+          <input type="number" id="sal-utility" placeholder="e.g. 20000" min="0" step="1000">
+        </div>
+        <div class="fgrp">
+          <label>Tax Deduction (₦)</label>
+          <input type="number" id="sal-tax" placeholder="e.g. 25000" min="0" step="1000">
+        </div>
+        <div class="fgrp">
+          <label>Pension Deduction (₦)</label>
+          <input type="number" id="sal-pension" placeholder="e.g. 15000" min="0" step="1000">
+        </div>
+        <div class="fgrp">
+          <label>NHF Deduction (₦)</label>
+          <input type="number" id="sal-nhf" placeholder="e.g. 5000" min="0" step="1000">
+        </div>
+        <div class="fgrp">
+          <label>Other Deductions (₦)</label>
+          <input type="number" id="sal-other" placeholder="e.g. 10000" min="0" step="1000">
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:14px;background:#f0f7fc;border-radius:6px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-weight:600">Total Earnings:</span>
+          <span style="font-weight:700;color:var(--grn)" id="sal-total-earn">₦0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-weight:600">Total Deductions:</span>
+          <span style="font-weight:700;color:var(--red)" id="sal-total-ded">₦0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--br)">
+          <span style="font-weight:700;font-size:1.1em">Net Pay:</span>
+          <span style="font-weight:700;font-size:1.1em;color:var(--ac)" id="sal-net-pay">₦0.00</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:9px;margin-top:18px">
+        <button class="btn bp" id="salary-save-btn" onclick="saveSalaryData()">💾 Save Salary</button>
+        <button class="btn bs" onclick="closeModal('m-salary')">Cancel</button>
       </div>
     </div>
   </div>
@@ -794,6 +910,7 @@ function loadData() {
       loadPayslipTemplate();
     }
   });
+  loadSalaryData();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1359,6 +1476,502 @@ function renderPayHistory() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// SALARY MANAGEMENT SYSTEM
+// ═══════════════════════════════════════════════════════════
+
+let salaries = {};
+let currentSalaryEmp = null;
+
+// Load salary data from Firebase
+function loadSalaryData() {
+  db.ref('salaries').on('value', snapshot => {
+    salaries = {};
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        salaries[child.key] = child.val();
+      });
+    }
+    console.log(`✅ Loaded salary data for ${Object.keys(salaries).length} employees`);
+    renderSalaryTable();
+  });
+}
+
+// Render salary management table
+function renderSalaryTable() {
+  const tb = document.getElementById('salary-tb');
+  if (!employees.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="nd">No employees yet</td></tr>';
+    return;
+  }
+  
+  tb.innerHTML = employees.map(e => {
+    const empSalaries = salaries[e.firebaseKey] || {};
+    const latestMonth = Object.keys(empSalaries).sort().reverse()[0];
+    const latestSalary = latestMonth ? empSalaries[latestMonth] : null;
+    
+    let netPay = 0;
+    if (latestSalary) {
+      const earnings = (latestSalary.basic || 0) + (latestSalary.housing || 0) + 
+                       (latestSalary.transport || 0) + (latestSalary.utility || 0);
+      const deductions = (latestSalary.tax || 0) + (latestSalary.pension || 0) + 
+                         (latestSalary.nhf || 0) + (latestSalary.other || 0);
+      netPay = earnings - deductions;
+    }
+    
+    return `<tr>
+      <td><strong>${e.firstName} ${e.lastName}</strong><br><span class="m" style="font-size:.8em">${e.employeeId}</span></td>
+      <td>${e.department}</td>
+      <td class="m">${latestMonth ? fmtMo(latestMonth) : '—'}</td>
+      <td><strong style="color:var(--ac)">₦${fmtNum(netPay)}</strong></td>
+      <td>
+        <button class="btn bp bsm" onclick="openSalaryModal('${e.firebaseKey}')">✏️ Edit Salary</button>
+        <button class="btn bo bsm" onclick="viewSalaryHistory('${e.firebaseKey}')">📊 History</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Open salary edit modal
+function openSalaryModal(empKey) {
+  const emp = employees.find(e => e.firebaseKey === empKey);
+  if (!emp) return;
+  
+  currentSalaryEmp = empKey;
+  
+  // Update modal header
+  document.getElementById('salary-emp-name').textContent = `${emp.firstName} ${emp.lastName}`;
+  document.getElementById('salary-emp-info').textContent = `${emp.department} • ${emp.position}`;
+  
+  // Load latest salary data if exists
+  const empSalaries = salaries[empKey] || {};
+  const latestMonth = Object.keys(empSalaries).sort().reverse()[0];
+  const latestSalary = latestMonth ? empSalaries[latestMonth] : payslipTemplate;
+  
+  // Populate form
+  document.getElementById('sal-month').value = '';
+  document.getElementById('sal-basic').value = latestSalary.basic || '';
+  document.getElementById('sal-housing').value = latestSalary.housing || '';
+  document.getElementById('sal-transport').value = latestSalary.transport || '';
+  document.getElementById('sal-utility').value = latestSalary.utility || '';
+  document.getElementById('sal-tax').value = latestSalary.tax || '';
+  document.getElementById('sal-pension').value = latestSalary.pension || '';
+  document.getElementById('sal-nhf').value = latestSalary.nhf || '';
+  document.getElementById('sal-other').value = latestSalary.other || '';
+  
+  // Calculate totals
+  updateSalaryCalculations();
+  
+  // Add live calculation listeners
+  ['sal-basic', 'sal-housing', 'sal-transport', 'sal-utility', 'sal-tax', 'sal-pension', 'sal-nhf', 'sal-other'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.removeEventListener('input', updateSalaryCalculations);
+      el.addEventListener('input', updateSalaryCalculations);
+    }
+  });
+  
+  openModal('m-salary');
+}
+
+// Update salary calculations in modal
+function updateSalaryCalculations() {
+  const basic = parseFloat(V('sal-basic')) || 0;
+  const housing = parseFloat(V('sal-housing')) || 0;
+  const transport = parseFloat(V('sal-transport')) || 0;
+  const utility = parseFloat(V('sal-utility')) || 0;
+  const tax = parseFloat(V('sal-tax')) || 0;
+  const pension = parseFloat(V('sal-pension')) || 0;
+  const nhf = parseFloat(V('sal-nhf')) || 0;
+  const other = parseFloat(V('sal-other')) || 0;
+  
+  const totalEarn = basic + housing + transport + utility;
+  const totalDed = tax + pension + nhf + other;
+  const netPay = totalEarn - totalDed;
+  
+  document.getElementById('sal-total-earn').textContent = '₦' + fmtNum(totalEarn);
+  document.getElementById('sal-total-ded').textContent = '₦' + fmtNum(totalDed);
+  document.getElementById('sal-net-pay').textContent = '₦' + fmtNum(netPay);
+}
+
+// Save salary data
+async function saveSalaryData() {
+  const month = V('sal-month');
+  if (!month) {
+    toast('Please select a month', 'err');
+    return;
+  }
+  
+  if (!currentSalaryEmp) return;
+  
+  const salaryData = {
+    basic: parseFloat(V('sal-basic')) || 0,
+    housing: parseFloat(V('sal-housing')) || 0,
+    transport: parseFloat(V('sal-transport')) || 0,
+    utility: parseFloat(V('sal-utility')) || 0,
+    tax: parseFloat(V('sal-tax')) || 0,
+    pension: parseFloat(V('sal-pension')) || 0,
+    nhf: parseFloat(V('sal-nhf')) || 0,
+    other: parseFloat(V('sal-other')) || 0,
+    updatedAt: new Date().toISOString()
+  };
+  
+  await db.ref(`salaries/${currentSalaryEmp}/${month}`).set(salaryData);
+  
+  const emp = employees.find(e => e.firebaseKey === currentSalaryEmp);
+  await logActivity(`Updated salary for ${emp.firstName} ${emp.lastName} (${fmtMo(month)})`);
+  
+  toast('Salary data saved successfully', 'ok');
+  closeModal('m-salary');
+  currentSalaryEmp = null;
+}
+
+// View salary history
+function viewSalaryHistory(empKey) {
+  const emp = employees.find(e => e.firebaseKey === empKey);
+  if (!emp) return;
+  
+  const empSalaries = salaries[empKey] || {};
+  const months = Object.keys(empSalaries).sort().reverse();
+  
+  if (!months.length) {
+    toast('No salary history for this employee', 'err');
+    return;
+  }
+  
+  const html = `
+    <div style="margin-bottom:18px">
+      <div style="font-weight:700;font-size:1.2em;margin-bottom:4px">${emp.firstName} ${emp.lastName}</div>
+      <div style="color:var(--t3)">${emp.department} • ${emp.position}</div>
+    </div>
+    <div class="panel">
+      <div class="ph">Salary History</div>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr><th>Month</th><th>Gross Pay</th><th>Deductions</th><th>Net Pay</th></tr>
+          </thead>
+          <tbody>
+            ${months.map(month => {
+              const sal = empSalaries[month];
+              const gross = (sal.basic || 0) + (sal.housing || 0) + (sal.transport || 0) + (sal.utility || 0);
+              const ded = (sal.tax || 0) + (sal.pension || 0) + (sal.nhf || 0) + (sal.other || 0);
+              const net = gross - ded;
+              return `<tr>
+                <td><strong>${fmtMo(month)}</strong></td>
+                <td>₦${fmtNum(gross)}</td>
+                <td style="color:var(--red)">₦${fmtNum(ded)}</td>
+                <td><strong style="color:var(--ac)">₦${fmtNum(net)}</strong></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('view-modal-title').textContent = '📊 Salary History';
+  document.getElementById('view-modal-body').innerHTML = html;
+  openModal('m-view');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTO-GENERATE PAYSLIP PDFs
+// ═══════════════════════════════════════════════════════════
+
+// Generate PDF for a single employee
+async function generatePayslipPDF(employee, salaryData, month) {
+  const basic = salaryData.basic || 0;
+  const housing = salaryData.housing || 0;
+  const transport = salaryData.transport || 0;
+  const utility = salaryData.utility || 0;
+  const tax = salaryData.tax || 0;
+  const pension = salaryData.pension || 0;
+  const nhf = salaryData.nhf || 0;
+  const other = salaryData.other || 0;
+  
+  const totalEarnings = basic + housing + transport + utility;
+  const totalDeductions = tax + pension + nhf + other;
+  const netPay = totalEarnings - totalDeductions;
+  
+  const currentDate = new Date();
+  const [year, monthNum] = month.split('-');
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthName = monthNames[parseInt(monthNum) - 1] + ' ' + year;
+  
+  // Create temporary container for PDF generation
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.width = '800px';
+  
+  container.innerHTML = `
+    <div class="payslip-container" style="font-family: 'Inter', sans-serif; background: white; width: 800px;">
+      <div class="payslip-header" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; padding: 40px; position: relative; overflow: hidden;">
+        <div style="content: ''; position: absolute; top: -50%; right: -20%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(249, 115, 22, 0.2) 0%, transparent 70%); border-radius: 50%;"></div>
+        <div class="header-content" style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1;">
+          <div class="logo-section" style="display: flex; align-items: center; gap: 20px;">
+            <div class="logo-icon" style="width: 60px; height: 60px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+              <div style="font-size:24px; color:#1e3a8a; font-weight:700">M</div>
+            </div>
+            <div class="company-info">
+              <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 2px; margin-bottom: 4px; color: white; margin: 0;">MONAPLIX</h1>
+              <p style="font-size: 12px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.9; color: #f97316; font-weight: 600; margin: 4px 0 0 0;">Energy Services</p>
+            </div>
+          </div>
+          <div class="payslip-title" style="text-align: right;">
+            <h2 style="font-size: 24px; font-weight: 300; margin-bottom: 8px; letter-spacing: 1px; margin: 0 0 8px 0;">PAYSLIP</h2>
+            <div class="period" style="font-size: 14px; opacity: 0.9; background: rgba(255,255,255,0.15); padding: 6px 16px; border-radius: 20px; display: inline-block;">${monthName}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="employee-section" style="padding: 30px 40px; background: #fafbfc; border-bottom: 1px solid #e2e8f0;">
+        <div class="section-title" style="font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #f97316; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+          EMPLOYEE INFORMATION
+          <div style="flex: 1; height: 1px; background: linear-gradient(90deg, #f97316 0%, transparent 100%);"></div>
+        </div>
+        <div class="details-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+          <div class="detail-item">
+            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Employee Name</div>
+            <div class="detail-value" style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 6px;">${employee.firstName} ${employee.lastName}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Employee ID</div>
+            <div class="detail-value" style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 6px;">${employee.employeeId}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Department</div>
+            <div class="detail-value" style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 6px;">${employee.department}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Position</div>
+            <div class="detail-value" style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 6px;">${employee.position}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Pay Period</div>
+            <div class="detail-value" style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 6px;">${monthName}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label" style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Payment Date</div>
+            <div class="detail-value" style="font-size: 15px; font-weight: 600; color: #1e293b; margin-top: 6px;">${currentDate.toLocaleDateString('en-US', {day: '2-digit', month: 'short', year: 'numeric'})}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="calculation-section" style="padding: 30px 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+        <div class="calc-box earnings" style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
+          <div class="calc-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #f1f5f9;">
+            <div class="calc-icon" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: #dcfce7; color: #16a34a;">💰</div>
+            <div class="calc-title" style="font-size: 16px; font-weight: 700; color: #1e293b;">Earnings</div>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>Basic Salary</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(basic)}</span>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>Housing Allowance</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(housing)}</span>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>Transport Allowance</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(transport)}</span>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>Utility Allowance</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(utility)}</span>
+          </div>
+          <div class="calc-row total" style="margin-top: 12px; padding-top: 16px; border-top: 2px solid #e2e8f0; border-bottom: none; font-weight: 700; font-size: 16px; color: #1e3a8a; display: flex; justify-content: space-between;">
+            <span>TOTAL EARNINGS</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(totalEarnings)}</span>
+          </div>
+        </div>
+        
+        <div class="calc-box deductions" style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">
+          <div class="calc-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #f1f5f9;">
+            <div class="calc-icon" style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: #fee2e2; color: #dc2626;">📉</div>
+            <div class="calc-title" style="font-size: 16px; font-weight: 700; color: #1e293b;">Deductions</div>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>Tax</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(tax)}</span>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>Pension</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(pension)}</span>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>NHF</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(nhf)}</span>
+          </div>
+          <div class="calc-row" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;">
+            <span>Other Deductions</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(other)}</span>
+          </div>
+          <div class="calc-row total" style="margin-top: 12px; padding-top: 16px; border-top: 2px solid #e2e8f0; border-bottom: none; font-weight: 700; font-size: 16px; color: #1e3a8a; display: flex; justify-content: space-between;">
+            <span>TOTAL DEDUCTIONS</span>
+            <span class="amount" style="font-weight: 600; font-family: 'Courier New', monospace;">₦${fmtNum(totalDeductions)}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="net-pay-section" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; padding: 40px; text-align: center; position: relative; overflow: hidden;">
+        <div style="content: ''; position: absolute; bottom: -50%; left: -20%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(249, 115, 22, 0.3) 0%, transparent 70%); border-radius: 50%;"></div>
+        <div class="net-pay-label" style="font-size: 14px; text-transform: uppercase; letter-spacing: 3px; opacity: 0.9; margin-bottom: 12px; position: relative;">NET PAY</div>
+        <div class="net-pay-amount" style="font-size: 48px; font-weight: 700; letter-spacing: -1px; position: relative; text-shadow: 0 4px 20px rgba(0,0,0,0.2);"><span style="font-size: 24px; vertical-align: super; opacity: 0.8;">₦</span>${fmtNum(netPay)}</div>
+      </div>
+      
+      <div class="payslip-footer" style="padding: 30px 40px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b;">
+        <div>Generated on ${currentDate.toLocaleDateString('en-US', {day: '2-digit', month: 'short', year: 'numeric'})}</div>
+        <div>Monaplix Energy Services • HR Department</div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(container);
+  
+  try {
+    const canvas = await html2canvas(container.firstElementChild, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff'
+    });
+    
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    
+    // Convert PDF to blob
+    const pdfBlob = pdf.output('blob');
+    
+    // Clean up
+    document.body.removeChild(container);
+    
+    return pdfBlob;
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    document.body.removeChild(container);
+    throw error;
+  }
+}
+
+// Generate and send payslips for all employees
+async function generateAndSendPayslips() {
+  const month = V('ps-month');
+  const subj = V('ps-sub');
+  const msgT = V('ps-msg');
+  
+  if (!month) {
+    toast('Select a month', 'err');
+    return;
+  }
+  
+  if (!employees.length) {
+    toast('No employees found', 'err');
+    return;
+  }
+  
+  console.log('=== GENERATE & SEND PAYSLIPS ===');
+  console.log('Month:', month);
+  console.log('Employees:', employees.length);
+  
+  showProg('pay-prog', true);
+  const btn = document.getElementById('gen-send-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  
+  let sent = 0, fail = 0;
+  const total = employees.length;
+  const results = [];
+  
+  for (let i = 0; i < employees.length; i++) {
+    const e = employees[i];
+    const msg = msgT.replace(/{name}/g, `${e.firstName} ${e.lastName}`).replace(/{month}/g, fmtMo(month));
+    
+    console.log(`\n--- Processing: ${e.firstName} ${e.lastName} ---`);
+    
+    // Get salary data for this employee and month
+    const empSalaries = salaries[e.firebaseKey] || {};
+    const salaryData = empSalaries[month];
+    
+    if (!salaryData) {
+      console.log(`⚠️ No salary data for ${e.firstName} for ${month}`);
+      fail++;
+      results.push({ empId: e.firebaseKey, name: `${e.firstName} ${e.lastName}`, email: e.email, sent: false, reason: 'No salary data' });
+      continue;
+    }
+    
+    let ok = false;
+    
+    try {
+      // Generate PDF
+      updProg('pay-prog', `Generating PDF for ${e.firstName} ${e.lastName}...`, i, total);
+      console.log('Generating PDF...');
+      
+      const pdfBlob = await generatePayslipPDF(e, salaryData, month);
+      
+      console.log(`✅ PDF generated (${fmtSz(pdfBlob.size)})`);
+      
+      // Convert to base64
+      updProg('pay-prog', `Preparing email for ${e.firstName} ${e.lastName}...`, i, total);
+      const base64 = await blobToBase64(pdfBlob);
+      
+      const attachments = [{
+        filename: `${e.firstName}_${e.lastName}_Payslip_${month}.pdf`,
+        content: base64,
+        type: 'application/pdf'
+      }];
+      
+      // Send via Brevo
+      updProg('pay-prog', `Sending email to ${e.firstName} ${e.lastName}...`, i, total);
+      console.log('Sending via Brevo...');
+      
+      ok = await brevoSend(e.email, `${e.firstName} ${e.lastName}`, `${subj} — ${fmtMo(month)}`, msg, attachments);
+      
+      console.log(ok ? '✅ Sent successfully' : '❌ Send failed');
+      
+    } catch (error) {
+      console.error(`❌ Error for ${e.firstName}:`, error);
+      ok = false;
+    }
+    
+    if (ok) sent++;
+    else fail++;
+    results.push({ empId: e.firebaseKey, name: `${e.firstName} ${e.lastName}`, email: e.email, sent: ok });
+    
+    await wait(500);
+  }
+  
+  updProg('pay-prog', 'Done!', total, total);
+  setTimeout(() => showProg('pay-prog', false), 2200);
+  btn.disabled = false;
+  btn.textContent = '🎨 Generate PDFs & Send to All';
+  
+  console.log('\n=== GENERATION COMPLETE ===');
+  console.log(`Sent: ${sent}, Failed: ${fail}`);
+  
+  // Save to Firebase
+  await db.ref('payHistory').push({
+    month: month,
+    subject: subj,
+    message: msgT,
+    sentAt: new Date().toISOString(),
+    recipients: results,
+    sent: sent,
+    fail: fail,
+    generatedPDFs: true
+  });
+  
+  await logActivity(`Generated and sent ${sent} payslips for ${fmtMo(month)}`);
+  
+  toast(`✅ Generated & sent: ${sent} payslips, ${fail} failed`, sent > 0 ? 'ok' : 'err');
+}  
+// ═══════════════════════════════════════════════════════════
 // PAYSLIP TEMPLATE SYSTEM
 // ═══════════════════════════════════════════════════════════
 
@@ -1675,6 +2288,7 @@ function pg(page, link) {
     health: ['Health Records', 'Medical tests and screenings'],
     education: ['Education & Training', 'Certifications and qualifications'],
     documents: ['All Documents', 'Complete document archive'],
+    salaries: ['Manage Salaries', 'Configure employee monthly salaries'],
     'payslip-template': ['Payslip Template', 'Configure salary components'],
     payslips: ['Send Payslips', 'Email payslips to employees'],
     payhistory: ['Payslip History', 'Full email send log'],
