@@ -1881,10 +1881,20 @@ async function generatePayslipPDF(employee, salaryData, month) {
 async function generateAndSendPayslips() {
   const month = V('ps-month');
   const subj = V('ps-sub');
-  const msgT = V('ps-msg');
+  const msgTemplate = V('ps-msg');
+  
+  console.log('=== GENERATE & SEND DEBUG ===');
+  console.log('Month:', month);
+  console.log('Subject:', subj);
+  console.log('Message template:', msgTemplate);
   
   if (!month) {
     toast('Select a month', 'err');
+    return;
+  }
+  
+  if (!subj || !msgTemplate) {
+    toast('Subject and message are required', 'err');
     return;
   }
   
@@ -1892,10 +1902,6 @@ async function generateAndSendPayslips() {
     toast('No employees found', 'err');
     return;
   }
-  
-  console.log('=== GENERATE & SEND PAYSLIPS ===');
-  console.log('Month:', month);
-  console.log('Employees:', employees.length);
   
   showProg('pay-prog', true);
   const btn = document.getElementById('gen-send-btn');
@@ -1908,9 +1914,18 @@ async function generateAndSendPayslips() {
   
   for (let i = 0; i < employees.length; i++) {
     const e = employees[i];
-    const msg = msgT.replace(/{name}/g, `${e.firstName} ${e.lastName}`).replace(/{month}/g, fmtMo(month));
+    
+    // Format message for this employee
+    const personalizedMsg = msgTemplate
+      .replace(/{name}/g, `${e.firstName} ${e.lastName}`)
+      .replace(/{month}/g, fmtMo(month));
+    
+    const emailSubject = `${subj} — ${fmtMo(month)}`;
     
     console.log(`\n--- Processing: ${e.firstName} ${e.lastName} ---`);
+    console.log('Email:', e.email);
+    console.log('Subject:', emailSubject);
+    console.log('Message length:', personalizedMsg.length);
     
     // Get salary data for this employee and month
     const empSalaries = salaries[e.firebaseKey] || {};
@@ -1919,7 +1934,13 @@ async function generateAndSendPayslips() {
     if (!salaryData) {
       console.log(`⚠️ No salary data for ${e.firstName} for ${month}`);
       fail++;
-      results.push({ empId: e.firebaseKey, name: `${e.firstName} ${e.lastName}`, email: e.email, sent: false, reason: 'No salary data' });
+      results.push({ 
+        empId: e.firebaseKey, 
+        name: `${e.firstName} ${e.lastName}`, 
+        email: e.email, 
+        sent: false, 
+        reason: 'No salary data' 
+      });
       continue;
     }
     
@@ -1931,7 +1952,6 @@ async function generateAndSendPayslips() {
       console.log('Generating PDF...');
       
       const pdfBlob = await generatePayslipPDF(e, salaryData, month);
-      
       console.log(`✅ PDF generated (${fmtSz(pdfBlob.size)})`);
       
       // Convert to base64
@@ -1944,11 +1964,23 @@ async function generateAndSendPayslips() {
         type: 'application/pdf'
       }];
       
-      // Send via Brevo
+      // Send via Brevo with properly formatted parameters
       updProg('pay-prog', `Sending email to ${e.firstName} ${e.lastName}...`, i, total);
-      console.log('Sending via Brevo...');
+      console.log('Calling brevoSend with:', {
+        email: e.email,
+        name: `${e.firstName} ${e.lastName}`,
+        subject: emailSubject,
+        messageLength: personalizedMsg.length,
+        attachments: attachments.length
+      });
       
-      ok = await brevoSend(e.email, `${e.firstName} ${e.lastName}`, `${subj} — ${fmtMo(month)}`, msg, attachments);
+      ok = await brevoSend(
+        e.email, 
+        `${e.firstName} ${e.lastName}`, 
+        emailSubject, 
+        personalizedMsg, 
+        attachments
+      );
       
       console.log(ok ? '✅ Sent successfully' : '❌ Send failed');
       
@@ -1959,7 +1991,12 @@ async function generateAndSendPayslips() {
     
     if (ok) sent++;
     else fail++;
-    results.push({ empId: e.firebaseKey, name: `${e.firstName} ${e.lastName}`, email: e.email, sent: ok });
+    results.push({ 
+      empId: e.firebaseKey, 
+      name: `${e.firstName} ${e.lastName}`, 
+      email: e.email, 
+      sent: ok 
+    });
     
     await wait(500);
   }
@@ -1976,7 +2013,7 @@ async function generateAndSendPayslips() {
   await db.ref('payHistory').push({
     month: month,
     subject: subj,
-    message: msgT,
+    message: msgTemplate,
     sentAt: new Date().toISOString(),
     recipients: results,
     sent: sent,
@@ -1987,7 +2024,7 @@ async function generateAndSendPayslips() {
   await logActivity(`Generated and sent ${sent} payslips for ${fmtMo(month)}`);
   
   toast(`✅ Generated & sent: ${sent} payslips, ${fail} failed`, sent > 0 ? 'ok' : 'err');
-}  
+}
 // ═══════════════════════════════════════════════════════════
 // PAYSLIP TEMPLATE SYSTEM
 // ═══════════════════════════════════════════════════════════
