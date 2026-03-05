@@ -958,55 +958,48 @@ async function ejsSend(toEmail, toName, subject, message) {
 // BREVO EMAIL WITH ATTACHMENTS (FIXED VERSION)
 // ═══════════════════════════════════════════════════════════
 
- async function brevoSend(toEmail, toName, subject, message, attachments = []) {
+async function brevoSend(toEmail, toName, subject, message, attachments = []) {
   try {
-    console.log('🔵 Calling Brevo function with:', {
-      to: toEmail,
-      toName: toName,
-      subject: subject,
-      messageLength: message?.length,
-      attachmentsCount: attachments?.length
-    });
-
-    // Validate inputs
+    console.log('🔵 Calling Brevo function');
+    
     if (!toEmail || !subject || !message) {
-      console.error('❌ Missing required fields locally:', {toEmail, subject, message});
+      console.error('❌ Missing required fields');
       return false;
     }
 
-    const sendEmailFunction = functions.httpsCallable('sendEmailWithAttachment');
-    
-    // Call the function with properly structured data
-    const result = await sendEmailFunction({
-      to: toEmail,
-      toName: toName || toEmail,
-      subject: subject,
-      message: message,
-      attachments: attachments || [],
-      from: emailConfig.senderEmail || 'hr.petroplix@outlook.com',
-      fromName: emailConfig.senderName || 'Monaplix HR Department'
+    // Clean attachments - ensure they're plain objects
+    const cleanAttachments = (attachments || []).map(att => ({
+      filename: String(att.filename || 'attachment.pdf'),
+      content: String(att.content || ''),
+      type: String(att.type || 'application/pdf')
+    }));
+
+    // Create completely clean data object
+    const functionData = {
+      to: String(toEmail),
+      toName: String(toName || toEmail),
+      subject: String(subject),
+      message: String(message),
+      attachments: cleanAttachments,
+      from: String(emailConfig.senderEmail || 'hr.petroplix@outlook.com'),
+      fromName: String(emailConfig.senderName || 'Monaplix HR Department')
+    };
+
+    console.log('📦 Clean data prepared:', {
+      to: functionData.to,
+      subject: functionData.subject.substring(0, 50),
+      attachmentsCount: functionData.attachments.length
     });
+
+    const sendEmailFunction = functions.httpsCallable('sendEmailWithAttachment');
+    const result = await sendEmailFunction(functionData);
     
-    console.log('✅ Brevo result:', result);
+    console.log('✅ Success:', result.data);
     return true;
   } catch (error) {
-    console.error('❌ Brevo error:', error);
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
-    console.error('Error details:', error.details);
+    console.error('❌ Error:', error.message);
     return false;
   }
-} 
-  function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result.split(',')[1]; // Remove data URL prefix
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 }
 
 // ═══════════════════════════════════════════════════════════
